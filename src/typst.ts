@@ -12,21 +12,28 @@ export function mask(text: string, strings = true): string {
   });
 }
 
-export interface OutlineItem { title: string; line: number; kind: 'question' | 'partie' | 'meta' | 'import' }
+export interface OutlineItem { title: string; line: number; kind: 'question' | 'partie' | 'meta' | 'import'; children?: OutlineItem[] }
 export function outline(text: string): OutlineItem[] {
   const code = mask(text);
   const items: OutlineItem[] = [];
   let number = Number(/\bdebut\s*:\s*(\d+)/.exec(code)?.[1] ?? 1);
   const lineAt = (offset: number) => text.slice(0, offset).split('\n').length - 1;
+  const parents: { end: number; children: OutlineItem[] }[] = [];
   for (const match of code.matchAll(/\b(question|partie)\s*\(/g)) {
+    while (parents.length && parents.at(-1)!.end <= match.index!) parents.pop();
+    const children = parents.at(-1)?.children ?? items;
     const tail = text.slice(match.index! + match[0].length);
     if (match[1] === 'question') {
       const body = /^\s*(?:enonce:\s*)?\[([^\]]*)/.exec(tail)?.[1] ?? '';
       const title = body.replace(/[\n\r]+/g, ' ').replace(/[#\[\]$]/g, '').trim().slice(0, 95);
-      items.push({ title: `${number++}. ${title || 'Question'}`, line: lineAt(match.index!), kind: 'question' });
+      children.push({ title: `${number++}. ${title || 'Question'}`, line: lineAt(match.index!), kind: 'question' });
     } else {
       const args = /^\s*"((?:\\.|[^"\\])*)"\s*,\s*"((?:\\.|[^"\\])*)"/.exec(tail);
-      items.push({ title: args ? `${args[1]} — ${args[2]}` : 'Partie', line: lineAt(match.index!), kind: 'partie' });
+      const item: OutlineItem = { title: args ? `${args[1]} — ${args[2]}` : 'Partie', line: lineAt(match.index!), kind: 'partie', children: [] };
+      children.push(item);
+      let depth = 1; let end = match.index! + match[0].length;
+      while (end < code.length && depth) { if (code[end] === '(') depth++; if (code[end] === ')') depth--; end++; }
+      parents.push({ end, children: item.children! });
     }
   }
   for (const match of code.matchAll(/^\s*(titre|chapitres|algorithmes|structures|langages|difficulte|niveaux|duree|concours)\s*:/gm)) {

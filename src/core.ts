@@ -28,11 +28,11 @@ export function pdfTarget(source: string, variant: Variant): string {
     : `build/${stem}/${variant}.pdf`;
 }
 
-export function watchArguments(source: string, variant: Variant): string[] {
+export function previewArguments(root: string, source: string, variant: Variant): string[] {
   safeSource(source);
-  const args = ['watch', '--root', '.', '--ignore-system-fonts', '--input', `corrige=${variant === 'corrige'}`];
+  const args = ['--root', root, '--ignore-system-fonts', '--input', `corrige=${variant === 'corrige'}`];
   if (!source.startsWith('feuilles/')) args.push('--input', `exercice=/${source}`);
-  args.push(source.startsWith('feuilles/') ? source : 'templates/fiche.typ', pdfTarget(source, variant));
+  args.push(`${root}/${source.startsWith('feuilles/') ? source : 'templates/fiche.typ'}`);
   return args;
 }
 

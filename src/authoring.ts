@@ -70,15 +70,16 @@ export class Selection implements vscode.TreeDataProvider<BankEntry>, vscode.Dis
   readonly entries: BankEntry[] = [];
   private readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.changed.event;
+  has(entry: BankEntry): boolean { return this.entries.some(item => item.bank.root === entry.bank.root && item.ex.fichier === entry.ex.fichier); }
   add(entries: BankEntry[]): void {
     const bank = this.entries[0]?.bank.root ?? entries[0]?.bank.root;
     if (entries.some(entry => entry.bank.root !== bank)) throw new Error('Une feuille doit réunir des exercices de la même banque.');
     for (const entry of entries) {
-      if (!this.entries.some(item => item.ex.fichier === entry.ex.fichier)) this.entries.push(entry);
+      if (!this.has(entry)) this.entries.push(entry);
     }
     this.changed.fire();
   }
-  remove(entry: BankEntry): void { const index = this.entries.indexOf(entry); if (index >= 0) this.entries.splice(index, 1); this.changed.fire(); }
+  remove(entry: BankEntry): void { const index = this.entries.findIndex(item => item.bank.root === entry.bank.root && item.ex.fichier === entry.ex.fichier); if (index >= 0) this.entries.splice(index, 1); this.changed.fire(); }
   move(entry: BankEntry, direction: number): void {
     const index = this.entries.indexOf(entry); const target = index + direction;
     if (index >= 0 && target >= 0 && target < this.entries.length) [this.entries[index], this.entries[target]] = [this.entries[target], this.entries[index]];
@@ -95,18 +96,12 @@ export class Selection implements vscode.TreeDataProvider<BankEntry>, vscode.Dis
   dispose(): void { this.changed.dispose(); }
 }
 
-export async function newSheet(selection: Selection, allEntries: BankEntry[]): Promise<vscode.Uri | undefined> {
+export async function newSheet(selection: Selection): Promise<vscode.Uri | undefined> {
   if (!selection.entries.length) {
-    const picked = await vscode.window.showQuickPick(allEntries.map(entry => ({ label: entry.ex.titre, description: entry.bank.name, entry })), { title: 'Sélectionner les exercices de la feuille', canPickMany: true });
-    if (!picked?.length) return;
-    selection.add(picked.map(item => item.entry));
+    await vscode.window.showInformationMessage('Cochez des exercices dans Exercices, puis réordonnez-les dans Feuilles.');
+    await vscode.commands.executeCommand('exercicesMpi.library.focus');
+    return;
   }
-  const order = await vscode.window.showQuickPick([
-    { label: "Créer dans l'ordre de la sélection", create: true },
-    { label: "Réordonner dans la vue Sélection pour une feuille", create: false }
-  ], { title: `${selection.entries.length} exercices sélectionnés`, placeHolder: selection.entries.map(entry => entry.ex.titre).join(' → ') });
-  if (!order) return;
-  if (!order.create) { await vscode.commands.executeCommand('exercicesMpi.selection.focus'); return; }
   const title = await input('Titre de la feuille', 'Travaux dirigés');
   const identifier = await input('Nom du fichier de la feuille', slug(title), value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? undefined : 'Utilisez des lettres minuscules, chiffres et tirets.');
   const bank = selection.entries[0].bank;

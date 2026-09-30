@@ -10,3 +10,4 @@ tsconfig.json
 package-lock.json
 dist/*.test.js
 dist/integration.js
+dist/probe.js

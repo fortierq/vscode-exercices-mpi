@@ -1,319 +1,97 @@
 {
   "name": "vscode-exercices-mpi",
-  "displayName": "Exercices MPI",
-  "description": "Rechercher des exercices Typst, compiler les énoncés et corrigés et consulter leurs PDF.",
-  "version": "0.2.0",
+  "displayName": "Exercices Typst",
+  "description": "Parcourir une banque d'exercices Typst, composer des feuilles et prévisualiser les énoncés et corrigés.",
+  "version": "0.3.0",
   "publisher": "qfortier",
   "license": "UNLICENSED",
-  "engines": {
-    "vscode": "^1.100.0"
-  },
-  "categories": [
-    "Other"
-  ],
+  "engines": { "vscode": "^1.100.0" },
+  "categories": ["Other"],
   "main": "./dist/extension.js",
-  "extensionKind": [
-    "workspace"
-  ],
-  "activationEvents": [
-    "workspaceContains:scripts/catalogue.py"
-  ],
+  "extensionDependencies": ["myriad-dreamin.tinymist"],
+  "extensionKind": ["workspace"],
+  "activationEvents": ["workspaceContains:scripts/catalogue.py"],
   "capabilities": {
-    "untrustedWorkspaces": {
-      "supported": false,
-      "description": "La compilation exécute les commandes Make et Nix de la banque."
-    },
-    "virtualWorkspaces": {
-      "supported": false
-    }
+    "untrustedWorkspaces": { "supported": false, "description": "La compilation exécute les outils de la banque." },
+    "virtualWorkspaces": { "supported": false }
   },
   "contributes": {
     "commands": [
-      {
-        "command": "exercicesMpi.newExercise",
-        "title": "Ajouter un exercice",
-        "category": "Exercices MPI",
-        "icon": "$(new-file)"
-      },
-      {
-        "command": "exercicesMpi.newSheet",
-        "title": "Créer une feuille avec la sélection",
-        "category": "Exercices MPI",
-        "icon": "$(file-add)"
-      },
-      {
-        "command": "exercicesMpi.addSelection",
-        "title": "Ajouter à la sélection",
-        "category": "Exercices MPI",
-        "icon": "$(add)"
-      },
-      {
-        "command": "exercicesMpi.removeSelection",
-        "title": "Retirer de la sélection",
-        "category": "Exercices MPI",
-        "icon": "$(close)"
-      },
-      {
-        "command": "exercicesMpi.clearSelection",
-        "title": "Vider la sélection",
-        "category": "Exercices MPI",
-        "icon": "$(clear-all)"
-      },
-      {
-        "command": "exercicesMpi.moveUp",
-        "title": "Monter",
-        "category": "Exercices MPI",
-        "icon": "$(arrow-up)"
-      },
-      {
-        "command": "exercicesMpi.moveDown",
-        "title": "Descendre",
-        "category": "Exercices MPI",
-        "icon": "$(arrow-down)"
-      },
-      {
-        "command": "exercicesMpi.search",
-        "title": "Rechercher",
-        "category": "Exercices MPI",
-        "icon": "$(search)"
-      },
-      {
-        "command": "exercicesMpi.filters",
-        "title": "Modifier les filtres",
-        "category": "Exercices MPI",
-        "icon": "$(filter)"
-      },
-      {
-        "command": "exercicesMpi.reset",
-        "title": "Effacer la recherche et les filtres",
-        "category": "Exercices MPI",
-        "icon": "$(clear-all)"
-      },
-      {
-        "command": "exercicesMpi.refresh",
-        "title": "Régénérer le catalogue",
-        "category": "Exercices MPI",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "exercicesMpi.source",
-        "title": "Ouvrir la source",
-        "category": "Exercices MPI",
-        "icon": "$(go-to-file)"
-      },
-      {
-        "command": "exercicesMpi.enonce",
-        "title": "Compiler et afficher l'énoncé",
-        "category": "Exercices MPI",
-        "icon": "$(file-pdf)"
-      },
-      {
-        "command": "exercicesMpi.corrige",
-        "title": "Compiler et afficher le corrigé",
-        "category": "Exercices MPI",
-        "icon": "$(checklist)"
-      },
-      {
-        "command": "exercicesMpi.compileBoth",
-        "title": "Compiler l'énoncé et le corrigé",
-        "category": "Exercices MPI"
-      },
-      {
-        "command": "exercicesMpi.output",
-        "title": "Afficher le journal de compilation",
-        "category": "Exercices MPI",
-        "icon": "$(output)"
-      }
+      { "command": "exercicesMpi.newExercise", "title": "Ajouter un exercice", "category": "Exercices Typst", "icon": "$(new-file)" },
+      { "command": "exercicesMpi.newSheet", "title": "Créer la feuille", "category": "Exercices Typst", "icon": "$(file-add)" },
+      { "command": "exercicesMpi.addSelection", "title": "Ajouter à la feuille", "category": "Exercices Typst", "icon": "$(add)" },
+      { "command": "exercicesMpi.removeSelection", "title": "Retirer de la feuille", "category": "Exercices Typst", "icon": "$(close)" },
+      { "command": "exercicesMpi.clearSelection", "title": "Vider la sélection", "category": "Exercices Typst", "icon": "$(clear-all)" },
+      { "command": "exercicesMpi.moveUp", "title": "Monter", "category": "Exercices Typst", "icon": "$(arrow-up)" },
+      { "command": "exercicesMpi.moveDown", "title": "Descendre", "category": "Exercices Typst", "icon": "$(arrow-down)" },
+      { "command": "exercicesMpi.toggleLibrary", "title": "Basculer dossiers / liste", "category": "Exercices Typst", "icon": "$(list-tree)" },
+      { "command": "exercicesMpi.toggleSheets", "title": "Basculer dossiers / liste des feuilles", "category": "Exercices Typst", "icon": "$(list-tree)" },
+      { "command": "exercicesMpi.toggleContests", "title": "Basculer dossiers / liste des concours", "category": "Exercices Typst", "icon": "$(list-tree)" },
+      { "command": "exercicesMpi.search", "title": "Rechercher", "category": "Exercices Typst", "icon": "$(search)" },
+      { "command": "exercicesMpi.filters", "title": "Modifier les filtres", "category": "Exercices Typst", "icon": "$(filter)" },
+      { "command": "exercicesMpi.reset", "title": "Effacer la recherche et les filtres", "category": "Exercices Typst", "icon": "$(clear-all)" },
+      { "command": "exercicesMpi.refresh", "title": "Régénérer le catalogue", "category": "Exercices Typst", "icon": "$(refresh)" },
+      { "command": "exercicesMpi.source", "title": "Ouvrir la source", "category": "Exercices Typst", "icon": "$(go-to-file)" },
+      { "command": "exercicesMpi.enonce", "title": "Compiler et afficher l'énoncé", "category": "Exercices Typst", "icon": { "light": "media/preview-light.svg", "dark": "media/preview-dark.svg" } },
+      { "command": "exercicesMpi.corrige", "title": "Compiler et afficher le corrigé", "category": "Exercices Typst", "icon": { "light": "media/preview-corrected.svg", "dark": "media/preview-corrected.svg" } },
+      { "command": "exercicesMpi.compileBoth", "title": "Exporter les PDF énoncé et corrigé (make c)", "category": "Exercices Typst" },
+      { "command": "exercicesMpi.sync", "title": "Rejoindre le curseur dans l'aperçu", "category": "Exercices Typst" },
+      { "command": "exercicesMpi.output", "title": "Afficher le journal de compilation", "category": "Exercices Typst", "icon": "$(output)" }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "exercicesMpi",
-          "title": "Exercices MPI",
-          "icon": "media/library.svg"
-        }
-      ]
-    },
-    "views": {
-      "exercicesMpi": [
-        {
-          "id": "exercicesMpi.current",
-          "name": "Fichier en cours"
-        },
-        {
-          "id": "exercicesMpi.library",
-          "name": "Banque d'exercices"
-        },
-        {
-          "id": "exercicesMpi.selection",
-          "name": "Sélection pour une feuille"
-        }
-      ]
-    },
+    "viewsContainers": { "activitybar": [{ "id": "exercicesMpi", "title": "Exercices Typst", "icon": "media/library.svg" }] },
+    "views": { "exercicesMpi": [
+      { "id": "exercicesMpi.current", "name": "Fichier actuel" },
+      { "id": "exercicesMpi.library", "name": "Exercices" },
+      { "id": "exercicesMpi.sheets", "name": "Feuilles" },
+      { "id": "exercicesMpi.contests", "name": "Concours" }
+    ] },
     "viewsWelcome": [
-      {
-        "view": "exercicesMpi.current",
-        "contents": "Ouvrez un fichier Typst pour afficher ses questions, parties et métadonnées."
-      },
-      {
-        "view": "exercicesMpi.selection",
-        "contents": "Ajoutez des exercices avec le bouton + de la banque, puis réordonnez-les.\n[Choisir des exercices](command:exercicesMpi.addSelection)\n[Créer une feuille](command:exercicesMpi.newSheet)"
-      },
-      {
-        "view": "exercicesMpi.library",
-        "contents": "Ouvrez le dossier d'une banque exercices-mpi.\n[Rechercher](command:exercicesMpi.search)\n[Régénérer le catalogue](command:exercicesMpi.refresh)"
-      }
+      { "view": "exercicesMpi.current", "contents": "Ouvrez un fichier Typst pour afficher son plan." },
+      { "view": "exercicesMpi.library", "contents": "Ouvrez une banque exercices-mpi.\n[Régénérer le catalogue](command:exercicesMpi.refresh)" }
     ],
     "menus": {
       "view/title": [
-        {
-          "command": "exercicesMpi.newExercise",
-          "when": "view == exercicesMpi.library",
-          "group": "navigation@4"
-        },
-        {
-          "command": "exercicesMpi.newSheet",
-          "when": "view == exercicesMpi.selection",
-          "group": "navigation@1"
-        },
-        {
-          "command": "exercicesMpi.addSelection",
-          "when": "view == exercicesMpi.selection",
-          "group": "navigation@2"
-        },
-        {
-          "command": "exercicesMpi.clearSelection",
-          "when": "view == exercicesMpi.selection"
-        },
-        {
-          "command": "exercicesMpi.search",
-          "when": "view == exercicesMpi.library",
-          "group": "navigation@1"
-        },
-        {
-          "command": "exercicesMpi.filters",
-          "when": "view == exercicesMpi.library",
-          "group": "navigation@2"
-        },
-        {
-          "command": "exercicesMpi.refresh",
-          "when": "view == exercicesMpi.library",
-          "group": "navigation@3"
-        },
-        {
-          "command": "exercicesMpi.reset",
-          "when": "view == exercicesMpi.library"
-        },
-        {
-          "command": "exercicesMpi.output",
-          "when": "view == exercicesMpi.library"
-        }
+        { "command": "exercicesMpi.search", "when": "view == exercicesMpi.library", "group": "navigation@1" },
+        { "command": "exercicesMpi.filters", "when": "view == exercicesMpi.library", "group": "navigation@2" },
+        { "command": "exercicesMpi.toggleLibrary", "when": "view == exercicesMpi.library", "group": "navigation@3" },
+        { "command": "exercicesMpi.newExercise", "when": "view == exercicesMpi.library", "group": "navigation@4" },
+        { "command": "exercicesMpi.refresh", "when": "view == exercicesMpi.library" },
+        { "command": "exercicesMpi.reset", "when": "view == exercicesMpi.library" },
+        { "command": "exercicesMpi.output", "when": "view == exercicesMpi.library" },
+        { "command": "exercicesMpi.newSheet", "when": "view == exercicesMpi.sheets", "group": "navigation@1" },
+        { "command": "exercicesMpi.toggleSheets", "when": "view == exercicesMpi.sheets", "group": "navigation@2" },
+        { "command": "exercicesMpi.addSelection", "when": "view == exercicesMpi.sheets" },
+        { "command": "exercicesMpi.clearSelection", "when": "view == exercicesMpi.sheets" },
+        { "command": "exercicesMpi.toggleContests", "when": "view == exercicesMpi.contests", "group": "navigation@1" }
       ],
       "view/item/context": [
-        {
-          "command": "exercicesMpi.addSelection",
-          "when": "view == exercicesMpi.library && viewItem == exercice",
-          "group": "inline@3"
-        },
-        {
-          "command": "exercicesMpi.moveUp",
-          "when": "viewItem == selectedExercise",
-          "group": "inline@1"
-        },
-        {
-          "command": "exercicesMpi.moveDown",
-          "when": "viewItem == selectedExercise",
-          "group": "inline@2"
-        },
-        {
-          "command": "exercicesMpi.removeSelection",
-          "when": "viewItem == selectedExercise",
-          "group": "inline@3"
-        },
-        {
-          "command": "exercicesMpi.enonce",
-          "when": "view == exercicesMpi.library && viewItem == exercice",
-          "group": "inline@1"
-        },
-        {
-          "command": "exercicesMpi.corrige",
-          "when": "view == exercicesMpi.library && viewItem == exercice",
-          "group": "inline@2"
-        },
-        {
-          "command": "exercicesMpi.source",
-          "when": "view == exercicesMpi.library && viewItem == exercice"
-        }
+        { "command": "exercicesMpi.addSelection", "when": "viewItem == exercice", "group": "selection" },
+        { "command": "exercicesMpi.moveUp", "when": "viewItem == selectedExercise", "group": "inline@1" },
+        { "command": "exercicesMpi.moveDown", "when": "viewItem == selectedExercise", "group": "inline@2" },
+        { "command": "exercicesMpi.removeSelection", "when": "viewItem == selectedExercise", "group": "inline@3" },
+        { "command": "exercicesMpi.newSheet", "when": "viewItem == sheetSelection", "group": "inline@1" },
+        { "command": "exercicesMpi.clearSelection", "when": "viewItem == sheetSelection", "group": "inline@2" },
+        { "command": "exercicesMpi.enonce", "when": "viewItem == exercice || viewItem == typstSource", "group": "inline@1" },
+        { "command": "exercicesMpi.corrige", "when": "viewItem == exercice || viewItem == typstSource", "group": "inline@2" },
+        { "command": "exercicesMpi.source", "when": "viewItem == exercice || viewItem == typstSource" }
       ],
       "editor/title": [
-        {
-          "command": "exercicesMpi.enonce",
-          "when": "resourceExtname == .typ",
-          "group": "navigation@8"
-        },
-        {
-          "command": "exercicesMpi.corrige",
-          "when": "resourceExtname == .typ",
-          "group": "navigation@9"
-        }
+        { "command": "exercicesMpi.enonce", "when": "resourceExtname == .typ", "group": "navigation@8" },
+        { "command": "exercicesMpi.corrige", "when": "resourceExtname == .typ", "group": "navigation@9" }
       ],
       "explorer/context": [
-        {
-          "command": "exercicesMpi.enonce",
-          "when": "resourceExtname == .typ",
-          "group": "exercicesMpi@1"
-        },
-        {
-          "command": "exercicesMpi.corrige",
-          "when": "resourceExtname == .typ",
-          "group": "exercicesMpi@2"
-        }
+        { "command": "exercicesMpi.enonce", "when": "resourceExtname == .typ", "group": "exercicesMpi@1" },
+        { "command": "exercicesMpi.corrige", "when": "resourceExtname == .typ", "group": "exercicesMpi@2" }
       ]
     },
     "configuration": {
-      "title": "Exercices MPI",
+      "title": "Exercices Typst",
       "properties": {
-        "exercicesMpi.typstPath": {
-          "type": "string",
-          "default": "typst",
-          "scope": "resource",
-          "description": "Exécutable Typst pour la compilation continue (watch), dans l'environnement choisi."
-        },
-        "exercicesMpi.bankPath": {
-          "type": "string",
-          "default": "",
-          "scope": "resource",
-          "description": "Chemin absolu ou relatif au dossier ouvert vers la banque. Vide : détection à la racine des dossiers ouverts."
-        },
-        "exercicesMpi.execution": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "nix",
-            "direct"
-          ],
-          "default": "auto",
-          "scope": "resource",
-          "description": "auto utilise Nix si la banque contient flake.nix, sinon Make directement."
-        },
-        "exercicesMpi.nixPath": {
-          "type": "string",
-          "default": "nix",
-          "scope": "resource",
-          "description": "Exécutable Nix. Les installations standard macOS sont détectées automatiquement."
-        },
-        "exercicesMpi.makePath": {
-          "type": "string",
-          "default": "make",
-          "scope": "resource",
-          "description": "Exécutable Make, disponible dans l'environnement choisi."
-        },
-        "exercicesMpi.autoCompile": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Recompiler les aperçus ouverts après l'enregistrement d'une source ou ressource de la banque."
-        }
+        "exercicesMpi.previewTheme": { "type": "string", "enum": ["auto", "light", "dark"], "default": "auto", "scope": "resource", "description": "Thème des pages : suivre VS Code, clair ou sombre. Les images conservent leurs couleurs." },
+        "exercicesMpi.bankPath": { "type": "string", "default": "", "scope": "resource", "description": "Chemin de la banque. Vide : racine du dossier ouvert." },
+        "exercicesMpi.execution": { "type": "string", "enum": ["auto", "nix", "direct"], "default": "auto", "scope": "resource", "description": "Pour les exports et le catalogue : auto utilise Nix si flake.nix existe, sinon Make." },
+        "exercicesMpi.nixPath": { "type": "string", "default": "nix", "scope": "resource", "description": "Exécutable Nix ; les installations standard macOS sont détectées." },
+        "exercicesMpi.makePath": { "type": "string", "default": "make", "scope": "resource", "description": "Exécutable Make dans l'environnement choisi." }
       }
     }
   },
@@ -325,13 +103,8 @@
     "vscode:prepublish": "npm run check && npm run build",
     "package": "vsce package --no-dependencies --allow-missing-repository --skip-license --out releases/"
   },
+  "dependencies": { "vscode-jsonrpc": "8.2.0" },
   "devDependencies": {
-    "@types/node": "22.20.4",
-    "@types/vscode": "1.100.0",
-    "@vscode/test-electron": "3.1.0",
-    "@vscode/vsce": "4.0.0",
-    "esbuild": "0.28.2",
-    "pdfjs-dist": "6.3.289",
-    "typescript": "5.9.3"
+    "@types/node": "22.20.4", "@types/vscode": "1.100.0", "@vscode/test-electron": "3.1.0", "@vscode/vsce": "4.0.0", "esbuild": "0.28.2", "typescript": "5.9.3"
   }
 }

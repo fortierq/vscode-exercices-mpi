@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 0.3.0 — Exercices Typst
+
+- Quatre sections : Fichier actuel, Exercices, Feuilles, Concours ; arborescences repliables ou listes.
+- Métadonnées accessibles par un lien ; parties du plan repliées par défaut.
+- Cases à cocher dans la recherche ; création des feuilles dans l'ordre de la sélection affichée sous Feuilles.
+- Aperçu Tinymist à la frappe, navigation précise dans les deux sens, thème sombre et variantes conservées en mémoire.
+- `make c` réservé à l'export ; suppression du lecteur PDF.js et du watch supplémentaire.
+- Icônes identiques pour les deux aperçus, corrigé en vert.
+
 ## 0.2.0
 
 - Barre PDF compacte, bascule énoncé/corrigé, défilement continu et navigation clavier.

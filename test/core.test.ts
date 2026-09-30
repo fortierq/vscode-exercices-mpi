@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Exercise, executionCommand, matches, parseCatalogue, parseDiagnostics, pdfTarget, watchArguments } from '../src/core';
+import { Exercise, executionCommand, matches, parseCatalogue, parseDiagnostics, pdfTarget, previewArguments } from '../src/core';
 import { exerciseFromTemplate, sheetFromTemplate, outline, vocabulary } from '../src/typst';
+import { hierarchy, isFolder } from '../src/tree';
 
 const exercise: Exercise = {
   titre: 'Automates et monoïdes', fichier: 'exercices/langages/automates-monoides.typ',
@@ -50,19 +51,19 @@ test('diagnostics Typst : erreurs, avertissements, coordonnées à base zéro', 
     { file: 'lib/exercices.typ', line: 1, column: 0, message: 'font missing', warning: true }
   ]);
 });
-test('watch : modèles et variantes cohérents avec les cibles make c', () => {
-  const exerciseArgs = watchArguments(exercise.fichier, 'corrige');
+test('aperçu : modèles et variantes cohérents avec les cibles make c, sans PDF intermédiaire', () => {
+  const exerciseArgs = previewArguments('/bank', exercise.fichier, 'corrige');
   assert.ok(exerciseArgs.includes('corrige=true'));
   assert.ok(exerciseArgs.includes(`exercice=/${exercise.fichier}`));
-  assert.equal(exerciseArgs.at(-1), pdfTarget(exercise.fichier, 'corrige'));
-  const sheetArgs = watchArguments('feuilles/langages/td.typ', 'enonce');
-  assert.equal(sheetArgs.at(-2), 'feuilles/langages/td.typ');
+  assert.equal(exerciseArgs.at(-1), '/bank/templates/fiche.typ');
+  const sheetArgs = previewArguments('/bank', 'feuilles/langages/td.typ', 'enonce');
+  assert.equal(sheetArgs.at(-1), '/bank/feuilles/langages/td.typ');
   assert.equal(sheetArgs.includes('templates/fiche.typ'), false);
 });
 test('plan, vocabulaire et création à partir des modèles Typst', () => {
   const source = '#let ex = exercice(\n  meta: (\n    titre: "Exemple",\n    chapitres: (),\n    algorithmes: (),\n    structures: (),\n    langages: (),\n    niveaux: (),\n    difficulte: 2,\n    duree: none,\n    concours: none,\n  ),\n  contenu: (\n    // question([Commentaire ignoré])\n    partie("I", "Test", contenu: (question([Une question ?]),)),\n  ),\n)';
-  assert.equal(outline(source).filter(item => item.kind === 'question').length, 1);
-  assert.equal(outline(source).find(item => item.kind === 'question')?.title, '1. Une question ?');
+  assert.equal(outline(source).find(item => item.kind === 'partie')?.children?.length, 1);
+  assert.equal(outline(source).find(item => item.kind === 'partie')?.children?.[0].title, '1. Une question ?');
   assert.deepEqual(vocabulary('#let chapitres-programme = (\n// "ignoré"\n"graphes", "logique",\n)', 'chapitres-programme'), ['graphes', 'logique']);
   const created = exerciseFromTemplate(source, { title: 'Titre "cité"', chapters: ['graphes'], algorithms: [], structures: [], languages: ['C'], levels: ['MPI'], difficulty: 3, minutes: 90 });
   assert.ok(created.includes('titre: "Titre \\"cité\\"",'.replaceAll('\\\\', '\\')));
@@ -72,4 +73,21 @@ test('plan, vocabulaire et création à partir des modèles Typst', () => {
   const sheet = sheetFromTemplate('#import "/templates/exercice.typ": ex\n#show: feuille.with(\n  titre: "TD",\n  exercices: (ex,),\n)\n', 'Feuille', [exercise.fichier, 'exercices/graphes/test.typ']);
   assert.ok(sheet.includes('ex as ex2'));
   assert.ok(sheet.includes('exercices: (ex1, ex2,),'));
+});
+test('parties imbriquées : les questions suivantes ne restent pas dans une partie fermée', () => {
+  const items = outline('partie("I", "Parent", contenu: (\npartie("A", "Enfant", contenu: (question([Alpha]),)),\nquestion([Beta]),)),\nquestion([Gamma])');
+  assert.equal(items.length, 2);
+  assert.equal(items[0].children?.length, 2);
+  assert.equal(items[0].children?.[0].children?.[0].title, '1. Alpha');
+  assert.equal(items[0].children?.[1].title, '2. Beta');
+  assert.equal(items[1].title, '3. Gamma');
+});
+test('arborescence : dossiers imbriqués et fichiers de même nom dans des dossiers différents', () => {
+  const files = ['b/test.typ', 'a/nested/test.typ', 'a/test.typ', 'root.typ'];
+  const tree = hierarchy(files, value => value);
+  assert.equal(tree.length, 3);
+  assert.ok(isFolder(tree[0]));
+  assert.equal(tree[0].title, 'a');
+  assert.equal(tree[0].children.length, 2);
+  assert.equal(tree[2], 'root.typ');
 });

@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { existsSync } from 'node:fs';
 import { spawn, ChildProcess } from 'node:child_process';
-import { executionCommand, parseDiagnostics, Variant, watchArguments } from './core';
+import { executionCommand, parseDiagnostics } from './core';
 
 export interface Bank { root: string; name: string; scope: vscode.Uri }
 
@@ -11,8 +11,7 @@ export class Runner implements vscode.Disposable {
   private queues = new Map<string, Promise<unknown>>();
   private children = new Set<ChildProcess>();
   private disposed = false;
-  private watches = new Map<string, { child: ChildProcess; stopped: boolean }>();
-  readonly output = vscode.window.createOutputChannel('Exercices MPI');
+  readonly output = vscode.window.createOutputChannel('Exercices Typst');
   readonly diagnostics = vscode.languages.createDiagnosticCollection('exercices-mpi');
 
   run(bank: Bank, targets: string[]): Promise<void> {
@@ -33,56 +32,12 @@ export class Runner implements vscode.Disposable {
     return executionCommand(config.get('execution', 'auto'), existsSync(path.join(bank.root, 'flake.nix')), nix, program ?? config.get('makePath', 'make'), targets);
   }
 
-  async stopWatch(bank: Bank, source: string): Promise<void> {
-    const key = `${bank.root}/${source}`;
-    const watch = this.watches.get(key);
-    if (!watch) return;
-    watch.stopped = true; this.watches.delete(key);
-    await new Promise<void>(resolve => {
-      const timeout = setTimeout(resolve, 2000);
-      watch.child.once('close', () => { clearTimeout(timeout); resolve(); });
-      this.stop(watch.child);
-    });
-  }
-
-  async watch(bank: Bank, source: string, variant: Variant, onState: (state: string) => void): Promise<void> {
-    await this.stopWatch(bank, source);
-    if (this.disposed || !vscode.workspace.isTrusted) return;
-    const config = vscode.workspace.getConfiguration('exercicesMpi', bank.scope);
-    if (!config.get('autoCompile', true)) { onState('manuel'); return; }
-    const { command, args } = this.command(bank, watchArguments(source, variant), config.get('typstPath', 'typst'));
-    this.output.appendLine(`\n[${bank.name}] watch : ${command} ${args.join(' ')}`);
-    const child = spawn(command, args, { cwd: bank.root, shell: false, detached: process.platform !== 'win32', env: { ...process.env, NO_COLOR: '1' } });
-    const key = `${bank.root}/${source}`;
-    const watch = { child, stopped: false };
-    this.watches.set(key, watch); this.children.add(child);
-    let output = ''; let timer: NodeJS.Timeout | undefined;
-    child.stdout?.setEncoding('utf8'); child.stderr?.setEncoding('utf8');
-    const collect = (text: string) => {
-      this.output.append(text); output = (output + text).slice(-100_000);
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        this.updateDiagnostics(bank, output);
-        if (!watch.stopped) onState(/error:/.test(output) ? 'erreur' : 'watch');
-        output = '';
-      }, 250);
-    };
-    child.stdout?.on('data', collect); child.stderr?.on('data', collect);
-    child.once('spawn', () => onState('watch'));
-    child.once('error', error => { this.output.appendLine(error.message); onState('erreur'); });
-    child.once('close', () => {
-      clearTimeout(timer); this.children.delete(child);
-      if (this.watches.get(key) === watch) this.watches.delete(key);
-      if (!watch.stopped && !this.disposed) onState('arrêté');
-    });
-  }
-
   private async execute(bank: Bank, targets: string[]): Promise<void> {
     if (this.disposed) return;
     if (!vscode.workspace.isTrusted) throw new Error('Autorisez ce dossier dans VS Code pour compiler.');
     const { command, args } = this.command(bank, targets);
     this.output.appendLine(`\n[${bank.name}] ${command} ${args.join(' ')}`);
-    await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: `Exercices MPI : ${targets[0] === 'catalogue' ? 'catalogue' : 'compilation'}`, cancellable: true }, async (_progress, token) => {
+    await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: `Exercices Typst : ${targets[0] === 'catalogue' ? 'catalogue' : 'compilation'}`, cancellable: true }, async (_progress, token) => {
       await new Promise<void>((resolve, reject) => {
         const child = spawn(command, args, { cwd: bank.root, shell: false, detached: process.platform !== 'win32', env: { ...process.env, NO_COLOR: '1' } });
         this.children.add(child);
@@ -94,14 +49,14 @@ export class Runner implements vscode.Disposable {
         const cancellation = token.onCancellationRequested(() => this.stop(child));
         child.once('error', error => {
           this.children.delete(child); cancellation.dispose();
-          reject(new Error(`Impossible de lancer ${command} : ${error.message}. Vérifiez les réglages Exercices MPI.`));
+          reject(new Error(`Impossible de lancer ${command} : ${error.message}. Vérifiez les réglages Exercices Typst.`));
         });
         child.once('close', code => {
           this.children.delete(child); cancellation.dispose();
           if (this.disposed || token.isCancellationRequested) { reject(new vscode.CancellationError()); return; }
           this.updateDiagnostics(bank, output);
           if (code === 0) resolve();
-          else { this.output.show(true); reject(new Error(`La compilation a échoué (code ${code}). Consultez le journal Exercices MPI et le panneau Problèmes.`)); }
+          else { this.output.show(true); reject(new Error(`La compilation a échoué (code ${code}). Consultez le journal Exercices Typst et le panneau Problèmes.`)); }
         });
       });
     });
