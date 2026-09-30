@@ -1,0 +1,12 @@
+.vscode/**
+.vscode-test/**
+.gitignore
+node_modules/**
+src/**
+test/**
+scripts/**
+releases/**
+tsconfig.json
+package-lock.json
+dist/*.test.js
+dist/integration.js
