@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 0.5.0
+
+- Glisser-déposer des fichiers et de la composition des feuilles ; suppression de l'ancienne sélection à cases.
+- Création de feuilles vides, destination choisie dans Feuilles, enregistrement automatique et suppression des imports retirés.
+- Lecture des anciennes feuilles sans virgule finale ; retrait des commandes et messages de source superflus.
+- Tinymist facultatif : lecteur PDF de secours. Désactivation des sauts et des surlignages dans le lecteur Tinymist.
+
 ## 0.4.0
 
 - Barre d'aperçu : Énoncé/Corrigé distincts, interrupteurs des sauts et du thème, icônes uniformisées.

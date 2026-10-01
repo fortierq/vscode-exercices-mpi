@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import { createMessageConnection, StreamMessageReader, StreamMessageWriter, MessageConnection } from 'vscode-jsonrpc/node';
 import { Variant, previewArguments } from './core';
 import { Bank } from './runner';
+import { bridge } from './preview-bridge';
 
 export interface Session { id: string; url: string; port: number; connection: MessageConnection; dispose(): void }
 
@@ -29,10 +30,11 @@ export async function start(bank: Bank, source: string, variant: Variant, option
   const subscriptions: vscode.Disposable[] = [];
   const diagnostics = vscode.languages.createDiagnosticCollection(id);
   let stopped = false;
+  let page: Awaited<ReturnType<typeof bridge>> | undefined;
   const dispose = () => {
     if (stopped) return; stopped = true;
     for (const sub of subscriptions) sub.dispose();
-    connection.dispose(); child.kill(); diagnostics.dispose(); output.dispose();
+    page?.dispose(); connection.dispose(); child.kill(); diagnostics.dispose(); output.dispose();
   };
   child.stderr.on('data', data => output.append(data.toString()));
   child.on('error', error => { output.appendLine(error.message); connection.dispose(); });
@@ -83,7 +85,8 @@ export async function start(bank: Bank, source: string, variant: Variant, option
     });
     const port = result?.staticServerPort;
     if (!Number.isInteger(port) || port! < 1 || port! > 65535) throw new Error("Tinymist n'a pas démarré l'aperçu.");
-    const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://127.0.0.1:${port}`));
+    page = await bridge(port, id);
+    const uri = await vscode.env.asExternalUri(vscode.Uri.parse(page.url));
     return { id, port, url: uri.toString(), connection, dispose };
   } catch (error) { dispose(); throw error; }
 }

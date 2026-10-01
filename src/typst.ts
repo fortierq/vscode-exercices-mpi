@@ -99,11 +99,10 @@ export function exerciseFromTemplate(template: string, data: NewExercise): strin
 }
 
 export function sheetFromTemplate(template: string, title: string, files: string[]): string {
-  if (!files.length) throw new Error('Sélectionnez au moins un exercice.');
   let result = template.replace(/^#import\s+"\/templates\/exercice.typ"[^\n]*$/m,
     files.map((file, i) => `#import ${quote('/' + file)}: ex as ex${i + 1}`).join('\n'));
   if (result === template) throw new Error("Modèle de feuille incompatible : import d'exemple absent.");
   result = result.replace(/(^[ \t]*titre:)[^\n]*/m, (_match, prefix) => `${prefix} ${quote(title)},`);
-  result = result.replace(/(^[ \t]*exercices:)[^\n]*/m, (_match, prefix) => `${prefix} (${files.map((_, i) => `ex${i + 1}`).join(', ')},),`);
+  result = result.replace(/(^[ \t]*exercices:)[^\n]*/m, (_match, prefix) => `${prefix} (${files.map((_, i) => `ex${i + 1},`).join(' ')}),`);
   return result;
 }

@@ -6,23 +6,24 @@ import { Filters, facets, labels, matches, parseCatalogue, pdfTarget, safeSource
 import { Bank, Runner } from './runner';
 import { Previews } from './preview';
 import { CurrentFile, reveal } from './outline';
-import { BankEntry, newExercise, newSheet, Selection, selectBank } from './authoring';
+import { BankEntry, newExercise, newSheet, selectBank } from './authoring';
 import { Browser, BrowserNode, Source } from './browser';
 import { isFolder } from './tree';
 import { Sheets, SheetMember } from './sheets';
 import { sourceMetadata } from './sheet-model';
 import { directories, newFolder, moveSource, deleteSource, Location } from './files';
+import { Drag } from './drag';
 
 export async function activate(context: vscode.ExtensionContext) {
   const runner = new Runner();
-  const selection = new Selection();
-  const library = new Browser('exercices', selection, context.workspaceState);
-  const sheets = new Browser('feuilles', selection, context.workspaceState);
-  const contests = new Browser('concours', selection, context.workspaceState);
+  const library = new Browser('exercices', context.workspaceState);
+  const sheets = new Browser('feuilles', context.workspaceState);
+  const contests = new Browser('concours', context.workspaceState);
   const browsers = [library, sheets, contests];
-  const view = vscode.window.createTreeView('exercicesMpi.library', { treeDataProvider: library, showCollapseAll: true, canSelectMany: true, manageCheckboxStateManually: true });
-  const sheetView = vscode.window.createTreeView('exercicesMpi.sheets', { treeDataProvider: sheets, showCollapseAll: true });
-  const contestView = vscode.window.createTreeView('exercicesMpi.contests', { treeDataProvider: contests, showCollapseAll: true });
+  const drag = <T>(category: string) => new Drag<T>(category, () => sheetEditor, relocate, error => report(error));
+  const view = vscode.window.createTreeView('exercicesMpi.library', { treeDataProvider: library, showCollapseAll: true, canSelectMany: true, dragAndDropController: drag<BrowserNode>('exercices') });
+  const sheetView = vscode.window.createTreeView('exercicesMpi.sheets', { treeDataProvider: sheets, showCollapseAll: true, dragAndDropController: drag<BrowserNode>('feuilles') });
+  const contestView = vscode.window.createTreeView('exercicesMpi.contests', { treeDataProvider: contests, showCollapseAll: true, dragAndDropController: drag<BrowserNode>('concours') });
   let banks: Bank[] = [];
   let watchers: vscode.Disposable[] = [];
   let disposed = false;
@@ -31,8 +32,14 @@ export async function activate(context: vscode.ExtensionContext) {
   if (saved) { library.query = saved.query; library.filters = saved.filters; }
   const entries = (): BankEntry[] => library.entries.flatMap(item => item.ex ? [{ bank: item.bank, ex: item.ex }] : []);
   const sheetEditor = new Sheets(() => banks, entries);
-  const currentFile = new CurrentFile(context, sheetEditor);
-  const visible = (): BankEntry[] => library.visible.flatMap(item => item.ex ? [{ bank: item.bank, ex: item.ex }] : []);
+  const currentFile = new CurrentFile(context, sheetEditor, drag('feuilles'));
+  context.subscriptions.push(sheetView.onDidChangeSelection(event => {
+    const node = event.selection[0];
+    if (node && !isFolder(node)) {
+      const source = 'sheet' in node ? node.sheet : node.source;
+      if (source.startsWith('feuilles/')) sheetEditor.selected = { bank: node.bank, source };
+    }
+  }));
   const report = (error: unknown) => {
     if (disposed || error instanceof vscode.CancellationError) return;
     runner.output.appendLine(String(error));
@@ -127,7 +134,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await discovery;
     if (argument && !(argument instanceof vscode.Uri)) {
       if (isFolder(argument)) return;
-      return checkSource('source' in argument ? argument : { bank: argument.bank, source: argument.ex.fichier });
+      return checkSource(argument);
     }
     const uri = argument ?? vscode.window.activeTextEditor?.document.uri;
     if (uri?.scheme === 'file') {
@@ -155,18 +162,18 @@ export async function activate(context: vscode.ExtensionContext) {
     const from = vscode.Uri.file(path.join(preview.bank.root, target));
     if (from.toString() !== destination.toString()) await vscode.workspace.fs.copy(from, destination, { overwrite: true });
   });
-  context.subscriptions.push(selection.onDidChangeTreeData(() => { library.changed.fire(); sheets.changed.fire(); }), view.onDidChangeCheckboxState(event => {
-    try {
-      const checked = event.items.flatMap(([item, state]) => !isFolder(item) && item.ex && state === vscode.TreeItemCheckboxState.Checked ? [{ bank: item.bank, ex: item.ex }] : []);
-      selection.add(checked);
-      for (const [item, state] of event.items) if (!isFolder(item) && item.ex && state === vscode.TreeItemCheckboxState.Unchecked) selection.remove({ bank: item.bank, ex: item.ex });
-    } catch (error) { library.changed.fire(); report(error); }
-  }));
   const register = (name: string, action: (...args: any[]) => unknown) => {
     context.subscriptions.push(vscode.commands.registerCommand(`exercicesMpi.${name}`, async (...args: unknown[]) => {
       try { return await action(...args); } catch (error) { if (error instanceof vscode.CancellationError) return; report(error); throw error; }
     }));
   };
+  async function relocate(source: Location, destination: string): Promise<void> {
+    await checkSource(source);
+    await moveSource(source, destination);
+    previews.entries.get(`${source.bank.root}/${source.source}`)?.panel.dispose();
+    for (const key of ['current', 'selected'] as const) if (sheetEditor[key]?.bank.root === source.bank.root && sheetEditor[key]?.source === source.source) sheetEditor[key] = { bank: source.bank, source: destination };
+    for (const browser of browsers) await scan(source.bank, browser);
+  }
   for (const [index, browser] of browsers.entries()) {
   const suffix = ['', 'Sheets', 'Contests'][index];
   register('search' + suffix, async () => {
@@ -193,57 +200,35 @@ export async function activate(context: vscode.ExtensionContext) {
   register('sync', () => previews.sync());
   register('reveal', reveal);
   register('toggleLibrary', () => library.toggle()); register('toggleSheets', () => sheets.toggle()); register('toggleContests', () => contests.toggle());
-  register('addSelection', async (entry?: BrowserNode, selected?: BrowserNode[]) => {
-    if (entry && !isFolder(entry) && entry.ex) selection.add((selected?.length ? selected : [entry]).flatMap(item => !isFolder(item) && item.ex ? [{ bank: item.bank, ex: item.ex }] : []));
-    else {
-      const picked = await vscode.window.showQuickPick(visible().map(entry => ({ label: entry.ex.titre, description: entry.bank.name, entry })), { title: 'Ajouter à la feuille', canPickMany: true });
-      if (picked) selection.add(picked.map(item => item.entry));
-    }
-  });
-  register('removeSelection', (entry: BankEntry) => selection.remove(entry)); register('moveUp', (entry: BankEntry) => selection.move(entry, -1)); register('moveDown', (entry: BankEntry) => selection.move(entry, 1)); register('clearSelection', () => selection.clear());
-  register('newSheet', async () => { await discovery; const uri = await newSheet(selection); if (uri) await vscode.commands.executeCommand('exercicesMpi.enonce', uri); });
+  register('newSheet', async () => { await discovery; const bank = await selectBank(banks); const uri = await newSheet(bank); await scan(bank, sheets); const source = sheets.entries.find(item => path.join(bank.root, item.source) === uri.fsPath); if (source) { sheetEditor.selected = source; await sheetView.reveal(source, { select: true, expand: true }); } });
   register('newExercise', async (argument?: Location) => { await discovery; const bank = argument?.bank ?? await selectBank(banks); await runner.run(bank, ['catalogue']); await load(bank); const uri = await newExercise(bank, entries(), argument?.source?.startsWith('exercices') ? argument.source : undefined); await runner.run(bank, ['catalogue']); await load(bank); await vscode.window.showTextDocument(uri); });
   for (const [name, direction] of [['memberUp', -1], ['memberDown', 1], ['memberRemove', undefined]] as const) register(name, async (argument: SheetMember | { member: SheetMember }) => { await sheetEditor.change('member' in argument ? argument.member : argument, direction); });
   register('addCurrent', async (argument?: BrowserNode) => {
     const source = await chooseSource(argument); if (!source) return;
     if (!source.source.startsWith('exercices/')) throw new Error('Choisissez un exercice à ajouter.');
-    let sheet = sheetEditor.current;
+    let sheet = sheetEditor.target;
     if (!sheet || sheet.bank.root !== source.bank.root) {
       const picked = await vscode.window.showQuickPick(sheets.entries.filter(item => item.bank.root === source.bank.root).map(item => ({ label: item.metadata?.[0]?.titre ?? item.source, description: item.source, item })), { title: 'Choisir la feuille en cours' });
-      if (!picked) return; sheet = picked.item;
+      if (!picked) return; sheet = picked.item; sheetEditor.selected = sheet;
     }
     await sheetEditor.add(source.bank, source.source, sheet.source);
-    void vscode.window.showInformationMessage(`Ajouté à ${sheet.source}. La modification peut être annulée et reste à enregistrer.`);
+    void vscode.window.showInformationMessage(`Ajouté à ${sheet.source}. Feuille enregistrée.`);
   });
   for (const [suffix, browser] of [['Library', library], ['Sheets', sheets], ['Contests', contests]] as const) register('newFolder' + suffix, async (argument?: Location) => {
     await discovery;
     const location = argument?.bank ? argument : { bank: await selectBank(banks), source: browser.category };
     await newFolder(location); await scan(location.bank, browser);
   });
-  register('moveSource', async (argument: BrowserNode) => {
-    const source = await chooseSource(argument); if (!source) return;
-    const category = source.source.split('/')[0];
-    const choices = await directories(source.bank, category);
-    const picked = await vscode.window.showQuickPick(choices.map(item => ({ label: item.source, item })), { title: 'Déplacer vers un dossier' });
-    if (!picked) return;
-    const destination = picked.item.source + '/' + path.posix.basename(source.source);
-    await moveSource(source, destination);
-    previews.entries.get(`${source.bank.root}/${source.source}`)?.panel.dispose();
-    const selected = selection.entries.find(item => item.bank.root === source.bank.root && item.ex.fichier === source.source);
-    if (selected) selected.ex.fichier = destination;
-    if (sheetEditor.current?.bank.root === source.bank.root && sheetEditor.current.source === source.source) sheetEditor.current.source = destination;
-    for (const browser of browsers) await scan(source.bank, browser);
-  });
   register('deleteSource', async (argument: BrowserNode) => {
     const source = await chooseSource(argument); if (!source || !await deleteSource(source)) return;
     previews.entries.get(`${source.bank.root}/${source.source}`)?.panel.dispose();
     if (sheetEditor.current?.bank.root === source.bank.root && sheetEditor.current.source === source.source) sheetEditor.current = undefined;
-    for (const entry of [...selection.entries]) if (entry.bank.root === source.bank.root && entry.ex.fichier === source.source) selection.remove(entry);
+    if (sheetEditor.selected?.bank.root === source.bank.root && sheetEditor.selected.source === source.source) sheetEditor.selected = undefined;
     for (const browser of browsers) await scan(source.bank, browser);
   });
   let sheetTimer: NodeJS.Timeout | undefined;
   context.subscriptions.push(sheetEditor.changed.event(() => { clearTimeout(sheetTimer); sheetTimer = setTimeout(() => { for (const bank of banks) void scan(bank, sheets).catch(report); }, 120); }), { dispose: () => clearTimeout(sheetTimer) });
-  context.subscriptions.push(runner, ...browsers, view, sheetView, contestView, previews, selection, currentFile, sheetEditor,
+  context.subscriptions.push(runner, ...browsers, view, sheetView, contestView, previews, currentFile, sheetEditor,
     vscode.workspace.onDidChangeWorkspaceFolders(() => { void discoverQueued().catch(report); }),
     vscode.workspace.onDidChangeConfiguration(event => { if (event.affectsConfiguration('exercicesMpi.bankPath')) void discoverQueued().catch(report); }),
     { dispose: () => { disposed = true; for (const watcher of watchers) watcher.dispose(); } });

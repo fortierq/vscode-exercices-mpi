@@ -74,45 +74,9 @@ export async function newExercise(bank: Bank, entries: BankEntry[], targetDirect
   return create(bank, `exercices/${directory ? directory + '/' : ''}${identifier}.typ`, exerciseFromTemplate(template, { title, chapters, algorithms, structures, languages, levels, difficulty: Number(difficultyChoice), minutes: Number(minutesText) || null }));
 }
 
-export class Selection implements vscode.TreeDataProvider<BankEntry>, vscode.Disposable {
-  readonly entries: BankEntry[] = [];
-  private readonly changed = new vscode.EventEmitter<void>();
-  readonly onDidChangeTreeData = this.changed.event;
-  has(entry: BankEntry): boolean { return this.entries.some(item => item.bank.root === entry.bank.root && item.ex.fichier === entry.ex.fichier); }
-  add(entries: BankEntry[]): void {
-    const bank = this.entries[0]?.bank.root ?? entries[0]?.bank.root;
-    if (entries.some(entry => entry.bank.root !== bank)) throw new Error('Une feuille doit réunir des exercices de la même banque.');
-    for (const entry of entries) {
-      if (!this.has(entry)) this.entries.push(entry);
-    }
-    this.changed.fire();
-  }
-  remove(entry: BankEntry): void { const index = this.entries.findIndex(item => item.bank.root === entry.bank.root && item.ex.fichier === entry.ex.fichier); if (index >= 0) this.entries.splice(index, 1); this.changed.fire(); }
-  move(entry: BankEntry, direction: number): void {
-    const index = this.entries.indexOf(entry); const target = index + direction;
-    if (index >= 0 && target >= 0 && target < this.entries.length) [this.entries[index], this.entries[target]] = [this.entries[target], this.entries[index]];
-    this.changed.fire();
-  }
-  clear(): void { this.entries.length = 0; this.changed.fire(); }
-  getChildren(): BankEntry[] { return this.entries; }
-  getTreeItem(entry: BankEntry): vscode.TreeItem {
-    const item = new vscode.TreeItem(`${this.entries.indexOf(entry) + 1}. ${entry.ex.titre}`);
-    item.contextValue = 'selectedExercise'; item.iconPath = new vscode.ThemeIcon('book');
-    item.command = { command: 'exercicesMpi.source', title: 'Ouvrir', arguments: [entry] };
-    return item;
-  }
-  dispose(): void { this.changed.dispose(); }
-}
-
-export async function newSheet(selection: Selection): Promise<vscode.Uri | undefined> {
-  if (!selection.entries.length) {
-    await vscode.window.showInformationMessage('Cochez des exercices dans Exercices, puis réordonnez-les dans Feuilles.');
-    await vscode.commands.executeCommand('exercicesMpi.library.focus');
-    return;
-  }
+export async function newSheet(bank: Bank): Promise<vscode.Uri> {
   const title = await input('Titre de la feuille', 'Travaux dirigés');
   const identifier = await input('Nom du fichier de la feuille', slug(title), value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? undefined : 'Utilisez des lettres minuscules, chiffres et tirets.');
-  const bank = selection.entries[0].bank;
   const template = await readFile(path.join(bank.root, 'templates/feuille.typ'), 'utf8');
-  return create(bank, `feuilles/${identifier}.typ`, sheetFromTemplate(template, title, selection.entries.map(entry => entry.ex.fichier)));
+  return create(bank, `feuilles/${identifier}.typ`, sheetFromTemplate(template, title, []));
 }

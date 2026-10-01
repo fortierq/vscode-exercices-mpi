@@ -4,6 +4,7 @@ import { Exercise, executionCommand, matches, parseCatalogue, parseDiagnostics, 
 import { exerciseFromTemplate, sheetFromTemplate, outline, vocabulary, mask } from '../src/typst';
 import { hierarchy, isFolder } from '../src/tree';
 import { sheetList, editSheet, sourceMetadata } from '../src/sheet-model';
+import { bridgeHtml } from '../src/preview-bridge';
 
 const exercise: Exercise = {
   titre: 'Automates et monoïdes', fichier: 'exercices/langages/automates-monoides.typ',
@@ -20,7 +21,7 @@ test('composition : ordre réel, imports inutilisés ignorés, références rela
   assert.ok(moved.endsWith('Texte personnalisé.'));
   const removed = editSheet(moved, 'feuilles/test.typ', { index: 0 });
   assert.equal(sheetList(removed, 'feuilles/test.typ').entries.length, 1);
-  assert.ok(removed.includes('ex as b'), 'Ne pas supprimer un import potentiellement utilisé ailleurs');
+  assert.ok(!removed.includes('ex as b'), 'Import retiré avec l’exercice');
   const added = editSheet(removed, 'feuilles/test.typ', { add: 'exercices/c.typ' });
   assert.deepEqual(sheetList(added, 'feuilles/test.typ').entries.map(entry => entry.source), ['exercices/a.typ', 'exercices/c.typ']);
   assert.throws(() => editSheet(added, 'feuilles/test.typ', { add: 'exercices/a.typ' }));
@@ -30,6 +31,24 @@ test('compositions calculées, ambiguës ou alias redéfinis : aucune réécritu
     assert.throws(() => sheetList(editableSheet.replace('(a, /* second */ b,)', list), 'feuilles/test.typ'));
   }
   assert.throws(() => sheetList(editableSheet + '\n#let a = autre', 'feuilles/test.typ'));
+});
+test('anciennes feuilles sans virgule finale et nouvelle feuille vide', () => {
+  const old = editableSheet.replace('(a, /* second */ b,)', '(a, b)');
+  assert.deepEqual(sheetList(old, 'feuilles/test.typ').entries.map(entry => entry.alias), ['a', 'b']);
+  const removed = editSheet(old, 'feuilles/test.typ', { index: 1 });
+  assert.ok(!removed.includes('ex as b'));
+  assert.equal(sheetList(removed, 'feuilles/test.typ').entries.length, 1);
+  assert.throws(() => editSheet(old + '\n#b.meta.titre', 'feuilles/test.typ', { index: 1 }), /ailleurs/);
+  const empty = sheetFromTemplate('#import "/templates/exercice.typ": ex\n#show: feuille.with(\n titre: "TD",\n exercices: (ex,),\n)', 'Vide', []);
+  assert.equal(sheetList(empty, 'feuilles/test.typ').entries.length, 0);
+  assert.ok(!empty.includes('/templates/exercice.typ'));
+});
+test('effets de survol Tinymist conditionnés à la synchronisation', () => {
+  const html = bridgeHtml('<head><style>.hover .typst-text {x:y}.typst-text:hover {x:y}</style></head>new URL("/", window.location.href)', 'http://127.0.0.1:123', 'secret');
+  assert.ok(html.includes('html.exercices-jumps .typst-text:hover'));
+  assert.ok(html.includes('html:not(.exercices-jumps) .typst-jump-ripple'));
+  assert.ok(html.includes('event.source!==parent'));
+  assert.ok(!html.includes('new URL("/", window.location.href)'));
 });
 test('commentaires imbriqués et code brut ne créent pas de faux éléments', () => {
   const text = '/* externe /* interne */ question([faux]) */\n`question([faux])`\nquestion([Vrai])';

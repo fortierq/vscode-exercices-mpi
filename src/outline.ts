@@ -11,13 +11,13 @@ export class CurrentFile implements vscode.TreeDataProvider<Node>, vscode.Dispos
   private current?: vscode.TextDocument;
   private subscriptions: vscode.Disposable[] = [];
   private revision = 0;
-  constructor(context: vscode.ExtensionContext, private sheets?: Sheets) {
+  constructor(context: vscode.ExtensionContext, private sheets?: Sheets, dragAndDropController?: vscode.TreeDragAndDropController<Node>) {
     this.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => { if (editor?.document.uri.path.endsWith('.typ')) { this.current = editor.document; this.update(); } }),
       vscode.workspace.onDidChangeTextDocument(event => { if (event.document === this.current) this.update(); }));
     this.current = vscode.window.activeTextEditor?.document;
     if (sheets) this.subscriptions.push(sheets.changed.event(() => this.update()));
     this.update();
-    context.subscriptions.push(vscode.window.createTreeView('exercicesMpi.current', { treeDataProvider: this, showCollapseAll: true }));
+    context.subscriptions.push(vscode.window.createTreeView('exercicesMpi.current', { treeDataProvider: this, showCollapseAll: true, dragAndDropController }));
   }
   private update(): void {
     const revision = ++this.revision;
@@ -29,11 +29,10 @@ export class CurrentFile implements vscode.TreeDataProvider<Node>, vscode.Dispos
       children: item.children?.map(node), collapsed: item.kind === 'partie' });
     this.nodes = [{ title: path.basename(document.uri.fsPath), uri: document.uri, line: 0, icon: 'file-code' },
       { title: 'Métadonnées', uri: document.uri, line: items.find(item => item.kind === 'meta')?.line ?? 0, icon: 'tag' },
-      ...items.filter(item => item.kind !== 'meta').map(node)];
+      ...items.filter(item => item.kind !== 'meta' && item.kind !== 'import').map(node)];
     this.emitter.fire();
     if (this.sheets) {
-      this.sheets.remember();
-      const sheet = this.sheets.current;
+      const sheet = this.sheets.locate(document.uri);
       if (sheet && document.uri.fsPath === path.join(sheet.bank.root, sheet.source)) {
         void this.sheets.members(sheet.bank, sheet.source).then(members => {
           if (this.current !== document || revision !== this.revision) return;

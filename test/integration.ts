@@ -6,7 +6,6 @@ import assert from 'node:assert/strict';
 import { Exercise } from '../src/core';
 import { Previews } from '../src/preview';
 import { Runner } from '../src/runner';
-import { Selection } from '../src/authoring';
 import { exerciseFromTemplate, sheetFromTemplate } from '../src/typst';
 import { forward } from '../src/tinymist';
 import { Browser } from '../src/browser';
@@ -14,6 +13,7 @@ import { isFolder } from '../src/tree';
 import { Sheets } from '../src/sheets';
 import { relocated, moveSource, directories } from '../src/files';
 import { sheetList, sourceMetadata } from '../src/sheet-model';
+import { Drag } from '../src/drag';
 
 async function until(condition: () => boolean | Promise<boolean>, message: string): Promise<void> {
   const deadline = Date.now() + 20_000;
@@ -25,6 +25,10 @@ export async function run(): Promise<void> {
   const extension = vscode.extensions.getExtension('qfortier.vscode-exercices-mpi');
   assert.ok(extension, 'Extension chargée');
   const api = await extension.activate();
+  for (const uri of await vscode.workspace.findFiles('feuilles/**/*.typ')) {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    sheetList(doc.getText(), path.relative(process.env.EXERCICES_MPI_BANK!, uri.fsPath));
+  }
   assert.ok(api.getEntries().length > 0, 'Banque détectée');
   const results: Exercise[] = api.search('monoides', { concours: 'ENS' });
   assert.ok(results.some(ex => ex.fichier.endsWith('/automates-monoides.typ')));
@@ -34,7 +38,6 @@ export async function run(): Promise<void> {
   const previewBank = { root: temporary, name: 'Test isolé', scope: vscode.Uri.file(temporary) };
   const previews = new Previews({ extensionUri: extension.extensionUri } as vscode.ExtensionContext, async () => undefined);
   const runner = new Runner();
-  const selection = new Selection();
   const sockets: WebSocket[] = [];
   try {
     for (const file of ['lib', 'templates', 'Makefile', 'flake.nix', 'flake.lock']) await cp(path.join(bank, file), path.join(temporary, file), { recursive: true });
@@ -53,6 +56,8 @@ export async function run(): Promise<void> {
     const listener = preview.panel.webview.onDidReceiveMessage(message => { if (message.type === 'frameReady') frames++; });
     await until(() => frames > 0, "L'iframe Tinymist ne se charge pas");
     const enonce = preview.sessions.get('enonce')!;
+    const nativeHtml = await (await fetch(enonce.url)).text();
+    assert.ok(nativeHtml.includes('html.exercices-jumps .typst-text:hover'));
     let documentOutline: any;
     enonce.connection.onNotification('tinymist/documentOutline', outline => { documentOutline = outline; });
     const socket = new WebSocket(`ws://127.0.0.1:${enonce.port}`);
@@ -108,22 +113,14 @@ export async function run(): Promise<void> {
     for (const variant of ['enonce', 'corrige']) assert.ok((await stat(path.join(temporary, 'build/exercices/graphes/test-creation', `${variant}.pdf`))).size > 1000);
     const entries = results.slice(0, 1).map(ex => ({ bank: previewBank, ex }));
     const state = { get: (_key: string, fallback: unknown) => fallback, update: async () => undefined } as unknown as vscode.Memento;
-    const browser = new Browser('exercices', selection, state);
+    const browser = new Browser('exercices', state);
     browser.entries = entries.map(item => ({ ...item, source: item.ex.fichier }));
-    selection.add(entries);
-    assert.ok(selection.has({ ...entries[0], ex: { ...entries[0].ex } }), 'Sélection stable après rechargement catalogue');
-    selection.add(entries);
-    assert.equal(selection.entries.length, 1);
-    assert.equal(browser.getTreeItem(browser.entries[0]).checkboxState, vscode.TreeItemCheckboxState.Checked);
-    browser.query = 'absent'; assert.equal(browser.visible.length, 0); assert.equal(selection.entries.length, 1);
+    assert.equal(browser.getTreeItem(browser.entries[0]).checkboxState, undefined);
+    browser.query = 'absent'; assert.equal(browser.visible.length, 0);
     browser.query = ''; assert.ok(isFolder(browser.getChildren()[0]));
     browser.toggle(); assert.ok(!isFolder(browser.getChildren()[0]));
-    assert.throws(() => selection.add([{ ...entries[0], bank: { ...previewBank, root: '/other' } }]));
-    selection.remove({ ...entries[0], ex: { ...entries[0].ex } });
-    assert.equal(selection.entries.length, 0);
-    assert.equal(browser.getTreeItem(browser.entries[0]).checkboxState, vscode.TreeItemCheckboxState.Unchecked);
     browser.dispose();
-    const sheetBrowser = new Browser('feuilles', selection, state);
+    const sheetBrowser = new Browser('feuilles', state);
     sheetBrowser.entries = [{ bank: previewBank, source: 'feuilles/td.typ', metadata: [sourceMetadata('titre: "Série spéciale"', 'feuilles/td.typ'), entries[0].ex] }];
     sheetBrowser.query = 'speciale monoides'; sheetBrowser.filters = { concours: 'ENS' };
     assert.equal(sheetBrowser.visible.length, 1, 'Titre de feuille combiné aux métadonnées de ses exercices');
@@ -137,11 +134,38 @@ export async function run(): Promise<void> {
     await sheetEditor.change(members[0]);
     const sheetDocument = await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(temporary, 'feuilles/test-creation.typ')));
     assert.equal(sheetList(sheetDocument.getText(), 'feuilles/test-creation.typ').entries.length, 0);
+    assert.ok(!sheetDocument.isDirty, 'Retrait enregistré automatiquement');
+    assert.ok(!sheetDocument.getText().includes('/' + relative), 'Import retiré');
     await sheetEditor.add(previewBank, relative, 'feuilles/test-creation.typ');
     assert.equal(sheetList(sheetDocument.getText(), 'feuilles/test-creation.typ').entries.length, 1);
-    await assert.rejects(sheetEditor.change(members[0]), /changé/, 'Refus d’une action sur une liste obsolète');
+    assert.ok(!sheetDocument.isDirty, 'Ajout enregistré automatiquement');
+    await assert.rejects(sheetEditor.change({ ...members[0], snapshot: 'obsolete' }), /changé/);
+    sheetEditor.selected = { bank: previewBank, source: 'feuilles/selection.typ' };
+    sheetEditor.current = { bank: previewBank, source: 'feuilles/autre.typ' };
+    assert.equal(sheetEditor.target?.source, 'feuilles/selection.typ');
+    const moved: string[] = [];
+    const drag = new Drag<any>('exercices', () => sheetEditor, async (_from, to) => { moved.push(to); }, error => { throw error; });
+    const transfer = new vscode.DataTransfer();
+    drag.handleDrag([{ bank: previewBank, source: relative }], transfer);
+    await drag.handleDrop({ bank: previewBank, source: 'exercices', folder: 'exercices' }, transfer);
+    assert.deepEqual(moved, ['exercices/test-creation.typ']);
     await sheetDocument.save(); sheetEditor.dispose();
     await runner.run(previewBank, ['c', 'feuilles/test-creation.typ']);
+    const fallback = new Previews({ extensionUri: extension.extensionUri } as vscode.ExtensionContext, async () => undefined, () => false);
+    try {
+      const pdfPreview = await fallback.open(previewBank, relative, 'enonce');
+      assert.equal(pdfPreview.jumps, false); assert.equal(pdfPreview.native, false);
+      let pdfReady = 0;
+      const pdfListener = pdfPreview.panel.webview.onDidReceiveMessage(message => { if (message.type === 'pdfError') console.error(message.error); if (message.type === 'pdfReady') pdfReady++; });
+      pdfPreview.panel.reveal(vscode.ViewColumn.Beside);
+      await pdfPreview.restart();
+      await until(() => pdfReady > 0, 'PDF affiché sans Tinymist');
+      await pdfPreview.toggleJumps(); assert.equal(pdfPreview.jumps, false);
+      const firstRender = pdfReady;
+      await pdfPreview.select('corrige');
+      await until(() => pdfReady > firstRender, 'Corrigé PDF affiché sans Tinymist');
+      pdfListener.dispose();
+    } finally { fallback.dispose(); }
     assert.equal(relocated('#import "../../lib/exercices.typ": exercice\n#image("../../ressources/a.png")', relative, relative, 'exercices/test-creation.typ'), '#import "../lib/exercices.typ": exercice\n#image("../ressources/a.png")');
     assert.ok((await directories(previewBank, 'exercices')).some(item => item.source === 'exercices/graphes'));
     assert.ok(preview.panel.webview.html.includes('id="jumps"') && preview.panel.webview.html.includes('id="corrige"'));
@@ -164,7 +188,7 @@ export async function run(): Promise<void> {
     assert.equal(previews.entries.size, 0);
   } finally {
     for (const socket of sockets) socket.close();
-    previews.dispose(); runner.dispose(); selection.dispose();
+    previews.dispose(); runner.dispose();
     await rm(temporary, { recursive: true, force: true });
   }
   console.log('Intégration complète réussie. Aucun PDF de la banque inspecté.');

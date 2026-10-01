@@ -12,6 +12,12 @@ export interface SheetMember {
 export class Sheets implements vscode.Disposable {
   readonly changed = new vscode.EventEmitter<void>();
   current?: { bank: Bank; source: string };
+  selected?: { bank: Bank; source: string };
+  get target() { return this.selected ?? this.current; }
+  locate(uri: vscode.Uri) {
+    const bank = this.banks().find(bank => uri.fsPath.startsWith(path.join(bank.root, 'feuilles') + path.sep));
+    return bank ? { bank, source: path.relative(bank.root, uri.fsPath).split(path.sep).join('/') } : undefined;
+  }
   private subscriptions: vscode.Disposable[];
   constructor(private banks: () => Bank[], private exercises: () => { bank: Bank; ex: Exercise }[]) {
     const track = (document?: vscode.TextDocument) => {
@@ -53,6 +59,7 @@ export class Sheets implements vscode.Disposable {
     const edit = new vscode.WorkspaceEdit();
     edit.replace(doc.uri, new vscode.Range(doc.positionAt(0), doc.positionAt(text.length)), result);
     if (!await vscode.workspace.applyEdit(edit)) throw new Error('Modification de la feuille impossible.');
+    if (!await doc.save()) throw new Error('La feuille a été modifiée mais son enregistrement a échoué.');
     this.current = { bank, source: sheet };
     this.changed.fire();
   }

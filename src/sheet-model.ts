@@ -37,13 +37,20 @@ export function sheetList(text: string, source: string): SheetList {
     entries.push({ alias, source: imports.get(alias)!, chunk: text.slice(start + offset, start + stop) });
     offset = stop;
   }
-  if (inner.slice(offset).trim()) throw new Error('La liste doit contenir des alias suivis d’une virgule.');
+  const last = inner.slice(offset).trim();
+  if (last) {
+    if (!/^[\w-]+$/.test(last) || !imports.has(last) || !entries.length) throw new Error('Liste non littérale.');
+    if (new RegExp(`\\blet\\s+${last}\\s*=`).test(code)) throw new Error('Alias redéfini : modifiez la composition dans la source.');
+    entries.push({ alias: last, source: imports.get(last)!, chunk: text.slice(start + offset, end) + ',' });
+    offset = inner.length;
+  }
   return { start, end, entries, tail: text.slice(start + offset, end) };
 }
 
 export function editSheet(text: string, source: string, operation: { index: number; direction?: number } | { add: string }): string {
   const list = sheetList(text, source);
   let prefix = '';
+  let removed: string | undefined;
   if ('add' in operation) {
     if (list.entries.some(entry => entry.source === operation.add)) throw new Error('Cet exercice figure déjà dans la feuille.');
     let n = 1;
@@ -52,14 +59,24 @@ export function editSheet(text: string, source: string, operation: { index: numb
     list.entries.push({ alias: `ex${n}`, source: operation.add, chunk: ` ex${n},` });
   } else {
     if (!list.entries[operation.index]) throw new Error('La feuille a changé ; actualisez la vue.');
-    if (operation.direction === undefined) list.entries.splice(operation.index, 1);
+    if (operation.direction === undefined) removed = list.entries.splice(operation.index, 1)[0].alias;
     else {
       const target = operation.index + operation.direction;
       if (target < 0 || target >= list.entries.length) return text;
       [list.entries[operation.index], list.entries[target]] = [list.entries[target], list.entries[operation.index]];
     }
   }
-  return prefix + text.slice(0, list.start) + list.entries.map(entry => entry.chunk).join('') + list.tail + text.slice(list.end);
+  let result = prefix + text.slice(0, list.start) + list.entries.map(entry => entry.chunk).join('') + list.tail + text.slice(list.end);
+  if (removed && !list.entries.some(entry => entry.alias === removed)) {
+    const pattern = /^#import\s+"[^"\n]+"\s*:\s*([\w-]+)(?:\s+as\s+([\w-]+))?[^\S\n]*(?:\/\/[^\n]*)?\r?\n/gm;
+    const match = [...result.matchAll(pattern)].find(match => (match[2] ?? match[1]) === removed && mask(result).slice(match.index, match.index! + 7) === '#import');
+    if (match) {
+      const without = result.slice(0, match.index) + result.slice(match.index! + match[0].length);
+      if (new RegExp(`(?<![\\w-])${removed}(?![\\w-])`).test(mask(without))) throw new Error('Cet alias est aussi utilisé ailleurs dans la feuille ; retirez cet usage avant de supprimer l’exercice.');
+      result = without;
+    } else throw new Error('Import à supprimer non reconnu.');
+  }
+  return result;
 }
 
 // Search indexes literal metadata only; compilation remains the catalogue's job.
