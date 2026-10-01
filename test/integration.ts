@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { Exercise } from '../src/core';
 import { Previews } from '../src/preview';
 import { Runner } from '../src/runner';
-import { exerciseFromTemplate, sheetFromTemplate } from '../src/typst';
+import { exerciseFromTemplate, sheetFromTemplate, contestFromTemplate, creationPath } from '../src/typst';
 import { forward } from '../src/tinymist';
 import { Browser } from '../src/browser';
 import { isFolder } from '../src/tree';
@@ -151,6 +151,11 @@ export async function run(): Promise<void> {
     assert.deepEqual(moved, ['exercices/test-creation.typ']);
     await sheetDocument.save(); sheetEditor.dispose();
     await runner.run(previewBank, ['c', 'feuilles/test-creation.typ']);
+    const contestPath = creationPath('concours', 'concours/24', 'sujet-test');
+    await mkdir(path.join(temporary, 'concours/24'), { recursive: true });
+    await writeFile(path.join(temporary, contestPath), contestFromTemplate(await readFile(path.join(temporary, 'templates/sujet-concours.typ'), 'utf8'), 'Sujet de test'));
+    await runner.run(previewBank, ['c', contestPath]);
+    for (const variant of ['enonce', 'corrige']) assert.ok((await stat(path.join(temporary, 'build/concours/24/sujet-test', variant + '.pdf'))).size > 1000);
     const fallback = new Previews({ extensionUri: extension.extensionUri } as vscode.ExtensionContext, async () => undefined, () => false);
     try {
       const pdfPreview = await fallback.open(previewBank, relative, 'enonce');

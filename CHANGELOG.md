@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.1
+
+- Création de feuilles et de sujets de concours dans le dossier choisi par clic droit ; bouton de création dans Concours.
+
 ## 0.5.0
 
 - Glisser-déposer des fichiers et de la composition des feuilles ; suppression de l'ancienne sélection à cases.

@@ -6,7 +6,7 @@ import { Filters, facets, labels, matches, parseCatalogue, pdfTarget, safeSource
 import { Bank, Runner } from './runner';
 import { Previews } from './preview';
 import { CurrentFile, reveal } from './outline';
-import { BankEntry, newExercise, newSheet, selectBank } from './authoring';
+import { BankEntry, newExercise, newSheet, newContest, selectBank } from './authoring';
 import { Browser, BrowserNode, Source } from './browser';
 import { isFolder } from './tree';
 import { Sheets, SheetMember } from './sheets';
@@ -200,7 +200,8 @@ export async function activate(context: vscode.ExtensionContext) {
   register('sync', () => previews.sync());
   register('reveal', reveal);
   register('toggleLibrary', () => library.toggle()); register('toggleSheets', () => sheets.toggle()); register('toggleContests', () => contests.toggle());
-  register('newSheet', async () => { await discovery; const bank = await selectBank(banks); const uri = await newSheet(bank); await scan(bank, sheets); const source = sheets.entries.find(item => path.join(bank.root, item.source) === uri.fsPath); if (source) { sheetEditor.selected = source; await sheetView.reveal(source, { select: true, expand: true }); } });
+  register('newSheet', async (argument?: Location) => { await discovery; const bank = argument?.bank ?? await selectBank(banks); const uri = await newSheet(bank, argument?.bank ? argument.source : undefined); await scan(bank, sheets); const source = sheets.entries.find(item => path.join(bank.root, item.source) === uri.fsPath); if (source) { sheetEditor.selected = source; await sheetView.reveal(source, { select: true, expand: true }); } });
+  register('newContest', async (argument?: Location) => { await discovery; const bank = argument?.bank ?? await selectBank(banks); const uri = await newContest(bank, argument?.bank ? argument.source : undefined); await scan(bank, contests); await vscode.window.showTextDocument(uri); });
   register('newExercise', async (argument?: Location) => { await discovery; const bank = argument?.bank ?? await selectBank(banks); await runner.run(bank, ['catalogue']); await load(bank); const uri = await newExercise(bank, entries(), argument?.source?.startsWith('exercices') ? argument.source : undefined); await runner.run(bank, ['catalogue']); await load(bank); await vscode.window.showTextDocument(uri); });
   for (const [name, direction] of [['memberUp', -1], ['memberDown', 1], ['memberRemove', undefined]] as const) register(name, async (argument: SheetMember | { member: SheetMember }) => { await sheetEditor.change('member' in argument ? argument.member : argument, direction); });
   register('addCurrent', async (argument?: BrowserNode) => {

@@ -1,4 +1,16 @@
-import { normalize } from './core';
+import { normalize, safeSource } from './core';
+
+export function creationPath(category: 'feuilles' | 'concours', directory: string, identifier: string): string {
+  if (directory !== category && !directory.startsWith(category + '/')) throw new Error('Le dossier doit appartenir à la bonne section.');
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(identifier)) throw new Error('Nom de fichier invalide.');
+  return safeSource(`${directory}/${identifier}.typ`);
+}
+
+export function contestFromTemplate(template: string, title: string): string {
+  const field = /(^[ \t]*titre:\s*)"(?:\\.|[^"\\])*"/m;
+  if (!field.test(template)) throw new Error('Modèle de concours incompatible : titre absent.');
+  return template.replace(field, (_match, prefix) => prefix + quote(title));
+}
 
 export const quote = (value: string) => JSON.stringify(value.replaceAll('’', "'"));
 export const tuple = (values: string[]) => `(${values.map(quote).join(', ')}${values.length ? ',' : ''})`;

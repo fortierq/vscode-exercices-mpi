@@ -3,7 +3,7 @@
   "displayName": "Exercices Typst",
   "icon": "media/icon-sidebar.png",
   "description": "Parcourir une banque d'exercices Typst, composer des feuilles et prévisualiser les énoncés et corrigés.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "qfortier",
   "license": "UNLICENSED",
   "engines": {
@@ -207,6 +207,12 @@
         "title": "Afficher le journal de compilation",
         "category": "Exercices Typst",
         "icon": "$(output)"
+      },
+      {
+        "command": "exercicesMpi.newContest",
+        "title": "Créer un sujet de concours",
+        "category": "Exercices Typst",
+        "icon": "$(new-file)"
       }
     ],
     "viewsContainers": {
@@ -339,6 +345,11 @@
           "command": "exercicesMpi.toggleContests",
           "when": "view == exercicesMpi.contests",
           "group": "navigation@1"
+        },
+        {
+          "command": "exercicesMpi.newContest",
+          "when": "view == exercicesMpi.contests",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -416,6 +427,16 @@
           "command": "exercicesMpi.corrige",
           "when": "viewItem == exercice || viewItem == typstSource",
           "group": "inline@2"
+        },
+        {
+          "command": "exercicesMpi.newSheet",
+          "when": "view == exercicesMpi.sheets && viewItem == sourceFolder",
+          "group": "files@1"
+        },
+        {
+          "command": "exercicesMpi.newContest",
+          "when": "view == exercicesMpi.contests && viewItem == sourceFolder",
+          "group": "files@1"
         }
       ],
       "editor/title": [

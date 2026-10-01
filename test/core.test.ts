@@ -5,6 +5,17 @@ import { exerciseFromTemplate, sheetFromTemplate, outline, vocabulary, mask } fr
 import { hierarchy, isFolder } from '../src/tree';
 import { sheetList, editSheet, sourceMetadata } from '../src/sheet-model';
 import { bridgeHtml } from '../src/preview-bridge';
+import { creationPath, contestFromTemplate } from '../src/typst';
+
+test('création dans le dossier choisi, sans traversée ni changement de section', () => {
+  assert.equal(creationPath('feuilles', 'feuilles/langages', 'td-test'), 'feuilles/langages/td-test.typ');
+  assert.equal(creationPath('concours', 'concours/24/oraux', 'sujet'), 'concours/24/oraux/sujet.typ');
+  for (const folder of ['exercices', 'feuilles/../concours', '/feuilles']) assert.throws(() => creationPath('feuilles', folder, 'test'));
+  assert.throws(() => creationPath('feuilles', 'feuilles', '../test'));
+  const template = 'titre: "Modèle",\nconcours: none,\ncontenu: (question([Question]),)';
+  assert.equal(contestFromTemplate(template, 'Titre "cité"'), 'titre: "Titre \\"cité\\"",\nconcours: none,\ncontenu: (question([Question]),)'.replaceAll('\\\\', '\\'));
+  assert.throws(() => contestFromTemplate('modèle incompatible', 'Titre'));
+});
 
 const exercise: Exercise = {
   titre: 'Automates et monoïdes', fichier: 'exercices/langages/automates-monoides.typ',

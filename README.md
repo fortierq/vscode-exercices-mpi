@@ -8,6 +8,7 @@ Installer le VSIX de `releases/`, puis ouvrir une banque `exercices-mpi` approuv
 - Réordonner les exercices par glisser-déposer ou avec les flèches ; **×** retire aussi l'import. Ces modifications sont enregistrées automatiquement et restent annulables. Un import utilisé ailleurs n'est pas supprimé silencieusement.
 - Déplacer les fichiers en les glissant sur un dossier ou dans le fond de leur section. Les références Typst littérales sont actualisées ; vérifier les chemins calculés et les références externes.
 - Bouton **Nouveau dossier** ; clic droit pour créer un exercice depuis le modèle ou supprimer un fichier dans la corbeille. Un fichier encore référencé ne peut pas être supprimé.
+- Clic droit sur un dossier de **Feuilles** ou **Concours** : créer un fichier depuis son modèle dans ce dossier. Les boutons des sections permettent aussi de créer un fichier sans dossier sélectionné. VS Code ne fournit pas de menu personnalisable sur la zone vide de ces arborescences.
 
 ## Aperçu
 

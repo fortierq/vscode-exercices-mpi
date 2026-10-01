@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { readFile, realpath } from 'node:fs/promises';
 import { Bank } from './runner';
 import { Exercise, normalize, safeSource } from './core';
-import { exerciseFromTemplate, sheetFromTemplate, slug, vocabulary } from './typst';
+import { exerciseFromTemplate, sheetFromTemplate, contestFromTemplate, creationPath, slug, vocabulary } from './typst';
 
 export interface BankEntry { bank: Bank; ex: Exercise }
 const canceled = () => { throw new vscode.CancellationError(); };
@@ -74,9 +74,20 @@ export async function newExercise(bank: Bank, entries: BankEntry[], targetDirect
   return create(bank, `exercices/${directory ? directory + '/' : ''}${identifier}.typ`, exerciseFromTemplate(template, { title, chapters, algorithms, structures, languages, levels, difficulty: Number(difficultyChoice), minutes: Number(minutesText) || null }));
 }
 
-export async function newSheet(bank: Bank): Promise<vscode.Uri> {
+export async function newSheet(bank: Bank, directory = 'feuilles'): Promise<vscode.Uri> {
   const title = await input('Titre de la feuille', 'Travaux dirigés');
   const identifier = await input('Nom du fichier de la feuille', slug(title), value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? undefined : 'Utilisez des lettres minuscules, chiffres et tirets.');
   const template = await readFile(path.join(bank.root, 'templates/feuille.typ'), 'utf8');
-  return create(bank, `feuilles/${identifier}.typ`, sheetFromTemplate(template, title, []));
+  return create(bank, creationPath('feuilles', directory, identifier), sheetFromTemplate(template, title, []));
+}
+
+export async function newContest(bank: Bank, directory = 'concours'): Promise<vscode.Uri> {
+  if (directory === 'concours') {
+    const year = await input('Année du sujet (quatre chiffres)', '', value => /^\d{4}$/.test(value) && +value > 0 ? undefined : 'Entrez une année sur quatre chiffres.');
+    directory += '/' + year.slice(-2);
+  }
+  const title = await input('Titre du sujet de concours');
+  const identifier = await input('Nom du fichier du sujet', slug(title), value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? undefined : 'Utilisez des lettres minuscules, chiffres et tirets.');
+  const template = await readFile(path.join(bank.root, 'templates/sujet-concours.typ'), 'utf8');
+  return create(bank, creationPath('concours', directory, identifier), contestFromTemplate(template, title));
 }
