@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 0.4.0
+
+- Barre d'aperçu : Énoncé/Corrigé distincts, interrupteurs des sauts et du thème, icônes uniformisées.
+- Composition des feuilles existantes : titres cliquables, monter/descendre, retirer, ajouter à la dernière feuille ouverte.
+- Recherche et filtres dans les trois bibliothèques ; concours affiché en premier après le titre des exercices.
+- Création de dossiers, déplacement avec mise à jour des références Typst littérales, suppression dans la corbeille avec contrôle des dépendances.
+
 ## 0.3.0 — Exercices Typst
 
 - Quatre sections : Fichier actuel, Exercices, Feuilles, Concours ; arborescences repliables ou listes.

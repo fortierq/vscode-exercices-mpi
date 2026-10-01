@@ -11,7 +11,7 @@ export interface Session { id: string; url: string; port: number; connection: Me
 
 // Tinymist's shared LSP ignores per-preview root/inputs. An isolated LSP
 // context reuses its installed engine without changing the user's settings.
-export async function start(bank: Bank, source: string, variant: Variant): Promise<Session> {
+export async function start(bank: Bank, source: string, variant: Variant, options: { dark?: boolean; canJump?: () => boolean } = {}): Promise<Session> {
   if (!vscode.workspace.isTrusted) throw new Error('Autorisez cet espace de travail pour ouvrir un aperçu.');
   const extension = vscode.extensions.getExtension('myriad-dreamin.tinymist');
   if (!extension) throw new Error('Installez Tinymist pour afficher les aperçus.');
@@ -19,7 +19,7 @@ export async function start(bank: Bank, source: string, variant: Variant): Promi
   if (!existsSync(binary)) throw new Error('Moteur Tinymist introuvable. Vérifiez son installation ou tinymist.serverPath.');
   const id = `exercices-typst-${randomUUID()}`;
   const theme = vscode.workspace.getConfiguration('exercicesMpi', bank.scope).get<string>('previewTheme', 'auto');
-  const dark = theme === 'dark' || (theme === 'auto' && [vscode.ColorThemeKind.Dark, vscode.ColorThemeKind.HighContrast].includes(vscode.window.activeColorTheme.kind));
+  const dark = options.dark ?? (theme === 'dark' || (theme === 'auto' && [vscode.ColorThemeKind.Dark, vscode.ColorThemeKind.HighContrast].includes(vscode.window.activeColorTheme.kind)));
   const args = previewArguments(bank.root, source, variant);
   const settings = { rootPath: bank.root, typstExtraArgs: args.slice(0, -1), exportPdf: 'never',
     preview: { refresh: 'onType', invertColors: JSON.stringify({ rest: dark ? 'always' : 'never', image: 'never' }) }, customizedShowDocument: true };
@@ -44,7 +44,7 @@ export async function start(bank: Bank, source: string, variant: Variant): Promi
     diagnostics.set(vscode.Uri.parse(params.uri), params.diagnostics.map(d => new vscode.Diagnostic(new vscode.Range(d.range.start.line, d.range.start.character, d.range.end.line, d.range.end.character), d.message, (d.severity ?? 1) - 1)));
   });
   const showSource = async (jump: { filepath: string; start: [number, number] | null; end: [number, number] | null }) => {
-    if (!jump.start || !jump.end || !path.resolve(jump.filepath).startsWith(bank.root + path.sep)) return;
+    if (options.canJump?.() === false || !jump.start || !jump.end || !path.resolve(jump.filepath).startsWith(bank.root + path.sep)) return;
     try {
       const uri = vscode.Uri.file(jump.filepath);
       const column = vscode.window.visibleTextEditors.find(editor => editor.document.uri.toString() === uri.toString())?.viewColumn ?? vscode.ViewColumn.One;
@@ -56,7 +56,7 @@ export async function start(bank: Bank, source: string, variant: Variant): Promi
   connection.onNotification('tinymist/preview/scrollSource', showSource);
   connection.onRequest('window/showDocument', async (request: { uri: string; selection?: { start: { line: number; character: number }; end: { line: number; character: number } } }) => {
     const uri = vscode.Uri.parse(request.uri);
-    if (uri.scheme !== 'file' || !uri.fsPath.startsWith(bank.root + path.sep)) return { success: false };
+    if (options.canJump?.() === false || uri.scheme !== 'file' || !uri.fsPath.startsWith(bank.root + path.sep)) return { success: false };
     const { start, end } = request.selection ?? { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } };
     await showSource({ filepath: uri.fsPath, start: [start.line, start.character], end: [end.line, end.character] });
     return { success: true };

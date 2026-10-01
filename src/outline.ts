@@ -1,22 +1,26 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { outline, OutlineItem } from './typst';
+import { Sheets, SheetMember, memberItem } from './sheets';
 
-type Node = { title: string; children?: Node[]; uri?: vscode.Uri; line?: number; icon?: string; collapsed?: boolean };
+type Node = { title: string; children?: Node[]; uri?: vscode.Uri; line?: number; icon?: string; collapsed?: boolean; member?: SheetMember };
 export class CurrentFile implements vscode.TreeDataProvider<Node>, vscode.Disposable {
   private readonly emitter = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.emitter.event;
   private nodes: Node[] = [];
   private current?: vscode.TextDocument;
   private subscriptions: vscode.Disposable[] = [];
-  constructor(context: vscode.ExtensionContext) {
+  private revision = 0;
+  constructor(context: vscode.ExtensionContext, private sheets?: Sheets) {
     this.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => { if (editor?.document.uri.path.endsWith('.typ')) { this.current = editor.document; this.update(); } }),
       vscode.workspace.onDidChangeTextDocument(event => { if (event.document === this.current) this.update(); }));
     this.current = vscode.window.activeTextEditor?.document;
+    if (sheets) this.subscriptions.push(sheets.changed.event(() => this.update()));
     this.update();
     context.subscriptions.push(vscode.window.createTreeView('exercicesMpi.current', { treeDataProvider: this, showCollapseAll: true }));
   }
   private update(): void {
+    const revision = ++this.revision;
     if (!this.current?.uri.path.endsWith('.typ')) return;
     const document = this.current;
     const items = outline(document.getText());
@@ -27,9 +31,21 @@ export class CurrentFile implements vscode.TreeDataProvider<Node>, vscode.Dispos
       { title: 'Métadonnées', uri: document.uri, line: items.find(item => item.kind === 'meta')?.line ?? 0, icon: 'tag' },
       ...items.filter(item => item.kind !== 'meta').map(node)];
     this.emitter.fire();
+    if (this.sheets) {
+      this.sheets.remember();
+      const sheet = this.sheets.current;
+      if (sheet && document.uri.fsPath === path.join(sheet.bank.root, sheet.source)) {
+        void this.sheets.members(sheet.bank, sheet.source).then(members => {
+          if (this.current !== document || revision !== this.revision) return;
+          this.nodes = [...this.nodes.slice(0, 2), ...members.map(member => ({ title: member.title, member }))];
+          this.emitter.fire();
+        }).catch(() => undefined);
+      }
+    }
   }
   getChildren(node?: Node): Node[] { return node?.children ?? (node ? [] : this.nodes); }
   getTreeItem(node: Node): vscode.TreeItem {
+    if (node.member) return memberItem(node.member);
     const item = new vscode.TreeItem(node.title, node.children ? node.collapsed ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
     item.id = `${this.current?.uri.toString()}:${node.line ?? 'metadata'}:${node.icon}`;
     item.iconPath = new vscode.ThemeIcon(node.icon ?? 'symbol-property');

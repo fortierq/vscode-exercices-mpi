@@ -1,7 +1,7 @@
 const vscode = acquireVsCodeApi();
 const status = document.getElementById('status');
 const frames = new Map();
-for (const id of ['switch', 'save', 'source', 'sync', 'restart']) {
+for (const id of ['enonce', 'corrige', 'save', 'source', 'jumps', 'theme', 'restart']) {
   document.getElementById(id).onclick = () => vscode.postMessage({ type: id });
 }
 window.addEventListener('message', ({ data }) => {
@@ -20,7 +20,9 @@ window.addEventListener('message', ({ data }) => {
     }
   }
   for (const [variant, frame] of frames) frame.hidden = variant !== data.variant;
-  document.getElementById('switch').textContent = data.variant === 'corrige' ? 'Corrigé ⇄' : 'Énoncé ⇄';
+  for (const variant of ['enonce', 'corrige']) document.getElementById(variant).setAttribute('aria-pressed', String(variant === data.variant));
+  document.getElementById('jumps').setAttribute('aria-pressed', String(data.jumps));
+  document.getElementById('theme').setAttribute('aria-pressed', String(data.dark));
   status.hidden = frames.has(data.variant);
 });
 vscode.postMessage({ type: 'ready' });

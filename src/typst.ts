@@ -6,10 +6,30 @@ export const slug = (value: string) => normalize(value).replace(/[^a-z0-9]+/g, '
 
 // Preserve offsets and line breaks while ignoring comments, strings and raw code.
 export function mask(text: string, strings = true): string {
-  return text.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|(`+)[\s\S]*?\1|"(?:\\.|[^"\\])*"/g, value => {
-    if (!strings && value.startsWith('"')) return value;
-    return value.replace(/[^\n]/g, ' ');
-  });
+  const result = text.split('');
+  const blank = (start: number, end: number) => { for (let j = start; j < end; j++) if (text[j] !== '\n') result[j] = ' '; };
+  for (let i = 0; i < text.length;) {
+    const start = i;
+    if (text.startsWith('//', i)) { i = text.indexOf('\n', i); if (i < 0) i = text.length; blank(start, i); }
+    else if (text.startsWith('/*', i)) {
+      i += 2; let depth = 1;
+      while (i < text.length && depth) {
+        if (text.startsWith('/*', i)) { depth++; i += 2; }
+        else if (text.startsWith('*/', i)) { depth--; i += 2; }
+        else i++;
+      }
+      blank(start, i);
+    } else if (text[i] === '"') {
+      i++;
+      while (i < text.length) { if (text[i] === '\\') i += 2; else if (text[i++] === '"') break; }
+      if (strings) blank(start, Math.min(i, text.length));
+    } else if (text[i] === '`') {
+      while (text[i] === '`') i++;
+      const fence = text.slice(start, i); const end = text.indexOf(fence, i);
+      i = end < 0 ? text.length : end + fence.length; blank(start, i);
+    } else i++;
+  }
+  return result.join('');
 }
 
 export interface OutlineItem { title: string; line: number; kind: 'question' | 'partie' | 'meta' | 'import'; children?: OutlineItem[] }

@@ -29,6 +29,14 @@ async function create(bank: Bank, relative: string, content: string): Promise<vs
   safeSource(relative);
   const uri = vscode.Uri.file(path.join(bank.root, relative));
   const directory = vscode.Uri.file(path.dirname(uri.fsPath));
+  let ancestor = directory.fsPath;
+  while (ancestor !== bank.root) {
+    try {
+      const actual = await realpath(ancestor);
+      if (!actual.startsWith(bank.root + path.sep)) throw new Error('Le dossier de destination doit rester dans la banque.');
+      break;
+    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; ancestor = path.dirname(ancestor); }
+  }
   await vscode.workspace.fs.createDirectory(directory);
   const actual = await realpath(directory.fsPath);
   if (!actual.startsWith(bank.root + path.sep)) throw new Error('Le dossier de destination doit rester dans la banque.');
@@ -42,7 +50,7 @@ async function create(bank: Bank, relative: string, content: string): Promise<vs
   return uri;
 }
 
-export async function newExercise(bank: Bank, entries: BankEntry[]): Promise<vscode.Uri> {
+export async function newExercise(bank: Bank, entries: BankEntry[], targetDirectory?: string): Promise<vscode.Uri> {
   const title = await input("Nouvel exercice — titre");
   const duplicate = entries.find(entry => entry.bank.root === bank.root && normalize(entry.ex.titre).trim() === normalize(title).trim());
   if (duplicate) { await vscode.window.showTextDocument(vscode.Uri.file(path.join(bank.root, duplicate.ex.fichier))); throw new Error('Un exercice porte déjà ce titre ; sa source a été ouverte pour comparaison.'); }
@@ -57,13 +65,13 @@ export async function newExercise(bank: Bank, entries: BankEntry[]): Promise<vsc
   const minutesText = await input('Durée estimée en minutes (0 : non estimée)', '20', value => /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) ? undefined : 'Entrez un nombre entier positif ou nul.');
   const directories = [...new Set(entries.filter(entry => entry.bank.root === bank.root).map(entry => entry.ex.fichier.split('/')[1]))];
   const preferred = entries.find(entry => entry.bank.root === bank.root && entry.ex.chapitres.includes(chapters[0]))?.ex.fichier.split('/')[1] ?? chapters[0];
-  const directory = await vscode.window.showQuickPick([...new Set([preferred, ...directories])], { title: 'Dossier de classement' });
-  if (!directory) canceled();
+  const directory = targetDirectory?.replace(/^exercices\/?/, '') ?? await vscode.window.showQuickPick([...new Set([preferred, ...directories])], { title: 'Dossier de classement' });
+  if (directory === undefined) canceled();
   const identifier = await input('Identifiant unique (nom du fichier)', slug(title), value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? undefined : 'Utilisez des lettres minuscules, chiffres et tirets.');
   const existing = await vscode.workspace.findFiles(new vscode.RelativePattern(vscode.Uri.file(bank.root), 'exercices/**/*.typ'));
   if (existing.some(uri => path.basename(uri.fsPath, '.typ') === identifier)) throw new Error(`L'identifiant ${identifier} existe déjà dans la banque.`);
   const template = await readFile(path.join(bank.root, 'templates/exercice.typ'), 'utf8');
-  return create(bank, `exercices/${directory}/${identifier}.typ`, exerciseFromTemplate(template, { title, chapters, algorithms, structures, languages, levels, difficulty: Number(difficultyChoice), minutes: Number(minutesText) || null }));
+  return create(bank, `exercices/${directory ? directory + '/' : ''}${identifier}.typ`, exerciseFromTemplate(template, { title, chapters, algorithms, structures, languages, levels, difficulty: Number(difficultyChoice), minutes: Number(minutesText) || null }));
 }
 
 export class Selection implements vscode.TreeDataProvider<BankEntry>, vscode.Disposable {
