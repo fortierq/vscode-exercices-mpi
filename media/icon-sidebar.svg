@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#107c78"/>
+  <!-- Même tracé que library.svg, centré et agrandi pour le Marketplace. -->
+  <g transform="translate(20 32) scale(8)" fill="none" stroke="#f7f5ec" stroke-width="1.5">
+    <path d="M3 4h5v16H3zM10 4h4v16h-4zM16 5l4-1 4 15-4 1z"/>
+  </g>
+</svg>

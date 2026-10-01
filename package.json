@@ -1,6 +1,7 @@
 {
   "name": "vscode-exercices-mpi",
   "displayName": "Exercices Typst",
+  "icon": "media/icon-sidebar.png",
   "description": "Parcourir une banque d'exercices Typst, composer des feuilles et prévisualiser les énoncés et corrigés.",
   "version": "0.5.0",
   "publisher": "qfortier",
