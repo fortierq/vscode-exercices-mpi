@@ -14,14 +14,15 @@ Installer le VSIX de `releases/`, puis ouvrir une banque `exercices-mpi` approuv
 
 Dans un éditeur Typst ou une liste du panneau Exercices Typst (hors champs de saisie) :
 
-| Touche | Action |
-| --- | --- |
-| F2 / F3 / F4 | Rechercher un exercice / une feuille / un sujet de concours |
-| F5 | Compiler et afficher le corrigé |
-| Maj+F2 | Filtrer les exercices |
-| Maj+F3 | Créer une feuille vide |
-| Maj+F4 | Ajouter un exercice |
-| Maj+F5 | Ouvrir le panneau |
+| Touche | Seule | Avec Maj |
+| --- | --- | --- |
+| F2 | Chercher un exercice | Chercher une feuille |
+| F3 | Filtrer les exercices | Filtrer les feuilles |
+| F4 | Ajouter un exercice | Créer une feuille vide |
+| F5 | Afficher le corrigé | Télécharger le corrigé |
+| F6 | Afficher l'énoncé | Télécharger l'énoncé |
+
+Le téléchargement propose un emplacement puis compile et enregistre le PDF, sans ouvrir l'aperçu. Enregistrer les sources avant l'export. La recherche de concours et l'ouverture du panneau restent accessibles par la palette.
 
 F1 reste inchangé. Ailleurs, les raccourcis habituels de VS Code restent disponibles. Sur Mac, **Fn** peut être nécessaire selon les réglages du clavier.
 

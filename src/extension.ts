@@ -155,14 +155,15 @@ export async function activate(context: vscode.ExtensionContext) {
     if (vscode.workspace.textDocuments.some(document => document.isDirty && document.uri.scheme === 'file' && document.uri.fsPath.startsWith(source.bank.root + path.sep))) throw new Error('Enregistrez les fichiers modifiés de la banque avant d’exporter le PDF.');
     await runner.run(source.bank, targets);
   }
-  const previews = new Previews(context, async (preview, variant) => {
+  async function exportPdf(preview: Source, variant: 'enonce' | 'corrige'): Promise<void> {
     const destination = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(preview.bank.root, pdfFilename(preview.source, variant))), filters: { PDF: ['pdf'] } });
     if (!destination) return;
     const target = pdfTarget(preview.source, variant);
     await compile(preview, [target]);
     const from = vscode.Uri.file(path.join(preview.bank.root, target));
     if (from.toString() !== destination.toString()) await vscode.workspace.fs.copy(from, destination, { overwrite: true });
-  });
+  }
+  const previews = new Previews(context, exportPdf);
   const register = (name: string, action: (...args: any[]) => unknown) => {
     context.subscriptions.push(vscode.commands.registerCommand(`exercicesMpi.${name}`, async (...args: unknown[]) => {
       try { return await action(...args); } catch (error) { if (error instanceof vscode.CancellationError) return; report(error); throw error; }
@@ -207,6 +208,10 @@ export async function activate(context: vscode.ExtensionContext) {
   register('refresh', async () => { await discovery; if (!banks.length) await discoverQueued(); for (const bank of banks) { await runner.run(bank, ['catalogue']); await load(bank); await scan(bank, sheets); await scan(bank, contests); } });
   register('source', async (argument?: BrowserNode | vscode.Uri) => { const source = await chooseSource(argument); if (source) await vscode.window.showTextDocument(vscode.Uri.file(path.join(source.bank.root, source.source))); });
   for (const variant of ['enonce', 'corrige'] as const) register(variant, async (argument?: BrowserNode | vscode.Uri) => { const source = await chooseSource(argument); if (source) await previews.open(source.bank, source.source, variant); });
+  for (const variant of ['enonce', 'corrige'] as const) register('download' + (variant === 'corrige' ? 'Corrige' : 'Enonce'), async (argument?: BrowserNode | vscode.Uri) => {
+    const source = await chooseSource(argument);
+    if (source) await exportPdf(source, variant);
+  });
   register('compileBoth', async (argument?: BrowserNode | vscode.Uri) => { const source = await chooseSource(argument); if (source) await compile(source); });
   register('output', () => runner.output.show(true));
   register('sync', () => previews.sync());

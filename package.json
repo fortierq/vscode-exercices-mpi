@@ -3,7 +3,7 @@
   "displayName": "Exercices Typst",
   "icon": "media/icon-sidebar.png",
   "description": "Parcourir une banque d'exercices Typst, composer des feuilles et prévisualiser les énoncés et corrigés.",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "publisher": "qfortier",
   "license": "UNLICENSED",
   "engines": {
@@ -234,6 +234,16 @@
       {
         "command": "exercicesMpi.collapsecontests",
         "title": "Tout replier",
+        "category": "Exercices Typst"
+      },
+      {
+        "command": "exercicesMpi.downloadCorrige",
+        "title": "Télécharger le corrigé (PDF)",
+        "category": "Exercices Typst"
+      },
+      {
+        "command": "exercicesMpi.downloadEnonce",
+        "title": "Télécharger l'énoncé (PDF)",
         "category": "Exercices Typst"
       }
     ],
@@ -542,10 +552,6 @@
           "when": "false"
         },
         {
-          "command": "exercicesMpi.filtersSheets",
-          "when": "false"
-        },
-        {
           "command": "exercicesMpi.resetSheets",
           "when": "false"
         },
@@ -579,10 +585,6 @@
         },
         {
           "command": "exercicesMpi.source",
-          "when": "false"
-        },
-        {
-          "command": "exercicesMpi.enonce",
           "when": "false"
         },
         {
@@ -666,43 +668,53 @@
     },
     "keybindings": [
       {
-        "command": "exercicesMpi.corrige",
-        "key": "f5",
-        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
-      },
-      {
         "command": "exercicesMpi.search",
         "key": "f2",
         "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.searchSheets",
-        "key": "f3",
-        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
-      },
-      {
-        "command": "exercicesMpi.searchContests",
-        "key": "f4",
-        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
-      },
-      {
-        "command": "exercicesMpi.filters",
         "key": "shift+f2",
         "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
-        "command": "exercicesMpi.newSheet",
+        "command": "exercicesMpi.filters",
+        "key": "f3",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
+      },
+      {
+        "command": "exercicesMpi.filtersSheets",
         "key": "shift+f3",
         "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.newExercise",
+        "key": "f4",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
+      },
+      {
+        "command": "exercicesMpi.newSheet",
         "key": "shift+f4",
         "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
-        "command": "exercicesMpi.openPanel",
+        "command": "exercicesMpi.corrige",
+        "key": "f5",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
+      },
+      {
+        "command": "exercicesMpi.downloadCorrige",
         "key": "shift+f5",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
+      },
+      {
+        "command": "exercicesMpi.enonce",
+        "key": "f6",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
+      },
+      {
+        "command": "exercicesMpi.downloadEnonce",
+        "key": "shift+f6",
         "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {

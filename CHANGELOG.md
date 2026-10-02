@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.10
+
+- F2–F6 : recherche, filtres, création et aperçus ; Maj pour les feuilles ou l'export PDF direct.
+
 ## 0.5.9
 
 - Raccourcis F2–F5 et Maj+F2–F5 dans les éditeurs Typst et les listes de l'extension ; F1 et les autres contextes préservés.
