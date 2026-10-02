@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.9
+
+- Raccourcis F2–F5 et Maj+F2–F5 dans les éditeurs Typst et les listes de l'extension ; F1 et les autres contextes préservés.
+
 ## 0.5.8
 
 - Retour au style de la barre PDF de 0.5.4 ; icône PDF et noms de fichiers conservés.

@@ -3,7 +3,7 @@
   "displayName": "Exercices Typst",
   "icon": "media/icon-sidebar.png",
   "description": "Parcourir une banque d'exercices Typst, composer des feuilles et prévisualiser les énoncés et corrigés.",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "publisher": "qfortier",
   "license": "UNLICENSED",
   "engines": {
@@ -667,43 +667,43 @@
     "keybindings": [
       {
         "command": "exercicesMpi.corrige",
-        "key": "ctrl+alt+x c",
-        "mac": "cmd+alt+x c"
+        "key": "f5",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.search",
-        "key": "ctrl+alt+x e",
-        "mac": "cmd+alt+x e"
+        "key": "f2",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.searchSheets",
-        "key": "ctrl+alt+x f",
-        "mac": "cmd+alt+x f"
+        "key": "f3",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.searchContests",
-        "key": "ctrl+alt+x s",
-        "mac": "cmd+alt+x s"
+        "key": "f4",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.filters",
-        "key": "ctrl+alt+x i",
-        "mac": "cmd+alt+x i"
+        "key": "shift+f2",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.newSheet",
-        "key": "ctrl+alt+x n",
-        "mac": "cmd+alt+x n"
+        "key": "shift+f3",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.newExercise",
-        "key": "ctrl+alt+x a",
-        "mac": "cmd+alt+x a"
+        "key": "shift+f4",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.openPanel",
-        "key": "ctrl+alt+x p",
-        "mac": "cmd+alt+x p"
+        "key": "shift+f5",
+        "when": "(editorTextFocus && resourceExtname == .typ) || (!inputFocus && focusedView =~ /^exercicesMpi\\./)"
       },
       {
         "command": "exercicesMpi.reset",
