@@ -1,12 +1,12 @@
 :root { color-scheme: light dark; }
 body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; color: var(--vscode-foreground); background: var(--vscode-editor-background); font: var(--vscode-font-size)/1.4 var(--vscode-font-family); }
-/* Panel title tabs and action buttons follow VS Code's terminal toolbar. */
-nav { display: flex; align-items: center; gap: 4px; height: 35px; min-height: 35px; padding: 0 8px; color: var(--vscode-panelTitle-activeForeground); background: var(--vscode-panel-background, var(--vscode-editor-background)); border-bottom: 1px solid var(--vscode-panel-border); }
+/* Compact toolbar: 22px actions with 2px vertical clearance. */
+nav { box-sizing: border-box; display: flex; align-items: center; gap: 4px; height: 26px; min-height: 26px; padding: 0 8px; color: var(--vscode-panelTitle-activeForeground); background: var(--vscode-panel-background, var(--vscode-editor-background)); border-bottom: 1px solid var(--vscode-panel-border); }
 button { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0; padding: 3px; color: var(--vscode-icon-foreground, var(--vscode-foreground)); background: transparent; border: 0; border-radius: 5px; cursor: pointer; }
 button:hover { background: var(--vscode-toolbar-hoverBackground); outline: 1px solid var(--vscode-toolbar-hoverOutline, transparent); }
 button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
 button[aria-pressed="true"] { background: var(--vscode-toolbar-activeBackground); }
-#enonce, #corrige { align-self: stretch; width: auto; height: auto; padding: 0 10px; border-radius: 0; border-bottom: 1px solid transparent; color: var(--vscode-panelTitle-inactiveForeground); font: inherit; font-size: 11px; text-transform: uppercase; }
+#enonce, #corrige { align-self: stretch; width: auto; height: auto; padding: 0 10px; border-radius: 0; border-bottom: 1px solid transparent; color: var(--vscode-panelTitle-inactiveForeground); font: inherit; font-size: 11px; }
 #enonce:hover, #corrige:hover { color: var(--vscode-panelTitle-activeForeground); background: transparent; outline: none; }
 #enonce[aria-pressed="true"], #corrige[aria-pressed="true"] { color: var(--vscode-panelTitle-activeForeground); border-bottom-color: var(--vscode-panelTitle-activeBorder); background: transparent; }
 svg { vertical-align: middle; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }

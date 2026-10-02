@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.6
+
+- Barre PDF compacte (26 px), libellés Énoncé et Corrigé sans majuscules forcées.
+
 ## 0.5.5
 
 - Icône PDF et noms cohérents pour l'aperçu et l'export : nom.pdf / nom-cor.pdf.
