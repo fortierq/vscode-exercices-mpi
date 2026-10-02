@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.8
+
+- Retour au style de la barre PDF de 0.5.4 ; icône PDF et noms de fichiers conservés.
+
 ## 0.5.7
 
 - Barre PDF de 30 px ; onglets Énoncé/Corrigé avec indicateur actif et focus comme le panneau Terminal.
