@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 0.5.11
+
+- F5 pour l'énoncé, F6 pour le corrigé ; Maj exporte la variante correspondante.
+- Décorations Git natives sur les fichiers, dossiers et exercices des feuilles.
+
 ## 0.5.10
 
 - F2–F6 : recherche, filtres, création et aperçus ; Maj pour les feuilles ou l'export PDF direct.

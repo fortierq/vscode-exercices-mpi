@@ -48,6 +48,7 @@ export class CurrentFile implements vscode.TreeDataProvider<Node>, vscode.Dispos
     const item = new vscode.TreeItem(node.title, node.children ? node.collapsed ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
     item.id = `${this.current?.uri.toString()}:${node.line ?? 'metadata'}:${node.icon}`;
     item.iconPath = new vscode.ThemeIcon(node.icon ?? 'symbol-property');
+    if (node.icon === 'file-code') item.resourceUri = node.uri;
     if (node.uri) item.command = { command: 'exercicesMpi.reveal', title: 'Afficher dans la source', arguments: [node.uri, node.line] };
     return item;
   }

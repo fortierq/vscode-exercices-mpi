@@ -136,12 +136,14 @@ export async function run(): Promise<void> {
     const browser = new Browser('exercices', state);
     browser.entries = entries.map(item => ({ ...item, source: item.ex.fichier }));
     assert.equal(browser.getTreeItem(browser.entries[0]).checkboxState, undefined);
+    assert.equal(browser.getTreeItem(browser.entries[0]).resourceUri?.fsPath, path.join(previewBank.root, browser.entries[0].source));
     browser.query = 'absent'; assert.equal(browser.visible.length, 0);
     browser.query = ''; assert.ok(isFolder(browser.getChildren()[0]));
     assert.equal(browser.searching, false);
     browser.filters = { concours: 'ENS' }; assert.equal(browser.searching, true); browser.filters = {};
     const parent = browser.getParent(browser.entries[0]);
     assert.ok(parent && isFolder(parent));
+    assert.equal(browser.getTreeItem(parent).resourceUri?.fsPath, parent.folder);
     assert.equal(browser.getParent(browser.entries[0]), parent, 'Identité du dossier stable');
     assert.equal(browser.getParent(parent), undefined);
     browser.toggle(); assert.ok(!isFolder(browser.getChildren()[0]));
@@ -159,6 +161,7 @@ export async function run(): Promise<void> {
     const members = await sheetEditor.members(previewBank, 'feuilles/test-creation.typ');
     assert.equal(members[0].title, 'Test création');
     assert.equal(memberItem(members[0]).label, '1. Test création');
+    assert.equal(memberItem(members[0]).resourceUri?.fsPath, path.join(previewBank.root, relative));
     await sheetEditor.change(members[0]);
     const sheetDocument = await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(temporary, 'feuilles/test-creation.typ')));
     assert.equal(sheetList(sheetDocument.getText(), 'feuilles/test-creation.typ').entries.length, 0);

@@ -70,6 +70,7 @@ export function memberItem(member: SheetMember): vscode.TreeItem {
   const item = new vscode.TreeItem(`${member.index + 1}. ${member.title}`);
   item.id = `${member.bank.root}/${member.sheet}:${member.index}`;
   item.contextValue = 'sheetMember';
+  item.resourceUri = vscode.Uri.file(path.join(member.bank.root, member.source));
   item.tooltip = member.source;
   item.command = { command: 'exercicesMpi.source', title: 'Ouvrir l’exercice', arguments: [member] };
   return item;

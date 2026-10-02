@@ -82,6 +82,7 @@ export class Browser implements vscode.TreeDataProvider<BrowserNode>, vscode.Dis
     if (isFolder(node)) {
       const item = new vscode.TreeItem(node.title, this.query || Object.keys(this.filters).length ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
       item.id = `${this.category}:${node.folder}`;
+      item.resourceUri = vscode.Uri.file(node.folder);
       item.iconPath = new vscode.ThemeIcon('folder');
       item.contextValue = 'sourceFolder';
       return item;
@@ -91,7 +92,9 @@ export class Browser implements vscode.TreeDataProvider<BrowserNode>, vscode.Dis
     const item = new vscode.TreeItem(ex?.titre ?? node.metadata?.[0]?.titre ?? path.basename(source, '.typ'), source.startsWith('feuilles/') ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
     item.id = `${bank.root}/${source}`;
     item.contextValue = ex ? 'exercice' : 'typstSource';
-    if (!ex) { item.resourceUri = vscode.Uri.file(path.join(bank.root, source)); item.iconPath = new vscode.ThemeIcon('file-code'); }
+    // VS Code applies its native Git decorations to this resource, including live updates.
+    item.resourceUri = vscode.Uri.file(path.join(bank.root, source));
+    if (!ex) item.iconPath = new vscode.ThemeIcon('file-code');
     item.description = ex ? [ex.concours?.nom, `${ex.difficulte}/5`, duration(ex), ex.langages.join(', ')].filter(Boolean).join(' · ') : this.flat ? path.dirname(source) : undefined;
     item.tooltip = ex ? [ex.titre, source, ex.chapitres.join(', '), ex.niveaux.join(', ')].join('\n') : source;
     item.command = { command: 'exercicesMpi.source', title: 'Afficher le fichier', arguments: [node] };

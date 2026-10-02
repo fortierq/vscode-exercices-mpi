@@ -19,8 +19,8 @@ Dans un éditeur Typst ou une liste du panneau Exercices Typst (hors champs de s
 | F2 | Chercher un exercice | Chercher une feuille |
 | F3 | Filtrer les exercices | Filtrer les feuilles |
 | F4 | Ajouter un exercice | Créer une feuille vide |
-| F5 | Afficher le corrigé | Télécharger le corrigé |
-| F6 | Afficher l'énoncé | Télécharger l'énoncé |
+| F5 | Afficher l'énoncé | Télécharger l'énoncé |
+| F6 | Afficher le corrigé | Télécharger le corrigé |
 
 Le téléchargement propose un emplacement puis compile et enregistre le PDF, sans ouvrir l'aperçu. Enregistrer les sources avant l'export. La recherche de concours et l'ouverture du panneau restent accessibles par la palette.
 
