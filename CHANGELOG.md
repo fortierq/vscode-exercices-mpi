@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.7
+
+- Barre PDF de 30 px ; onglets Énoncé/Corrigé avec indicateur actif et focus comme le panneau Terminal.
+
 ## 0.5.6
 
 - Barre PDF compacte (26 px), libellés Énoncé et Corrigé sans majuscules forcées.
