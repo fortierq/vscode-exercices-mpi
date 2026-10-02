@@ -3,7 +3,7 @@
   "displayName": "Exercices Typst",
   "icon": "media/icon-sidebar.png",
   "description": "Parcourir une banque d'exercices Typst, composer des feuilles et prévisualiser les énoncés et corrigés.",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "publisher": "qfortier",
   "license": "UNLICENSED",
   "engines": {

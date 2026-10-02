@@ -58,7 +58,9 @@ export async function newExercise(bank: Bank, entries: BankEntry[], targetDirect
   const chapters = await select('Chapitres / sujets', vocabulary(meta, 'chapitres-programme'), true);
   const algorithms = await select('Algorithmes', vocabulary(meta, 'algorithmes-programme'));
   const structures = await select('Structures de données', vocabulary(meta, 'structures-programme'));
-  const languages = await select('Langages utilisés', ['C', 'OCaml', 'Python']);
+  // Older banks do not yet export their language vocabulary.
+  const languageOptions = meta.includes('#let langages-possibles = (') ? vocabulary(meta, 'langages-possibles') : ['C', 'OCaml', 'Python', 'SQL'];
+  const languages = await select('Langages utilisés', languageOptions);
   const levels = await select('Niveaux', ['MP2I', 'MPI', 'MP'], true);
   const difficultyChoice = await vscode.window.showQuickPick(['1', '2', '3', '4', '5'], { title: 'Difficulté (1 : application directe ; 5 : très difficile)' });
   if (!difficultyChoice) canceled();

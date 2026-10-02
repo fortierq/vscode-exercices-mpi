@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.3
+
+- Création d'exercices : langages lus depuis lib/meta.typ, SQL disponible aussi avec les anciennes banques.
+
 ## 0.5.2
 
 - Création dans un dossier corrigée : sélection de la feuille avec ses parents, même après une recherche.
