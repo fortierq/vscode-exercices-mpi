@@ -133,6 +133,12 @@ test('plan, vocabulaire et création à partir des modèles Typst', () => {
   assert.ok(created.includes('duree: (1, 30),'));
   assert.equal(outline(created).filter(item => item.kind === 'question').length, 1);
   assert.ok(!created.includes('Une question ?'));
+  const annotated = '/// Aide du modèle\n/* Bloc /* imbriqué */ à retirer */\n#let lien = "https://example.org/*texte*/"\n#let code = `// commentaire de code`\n' + source.replace('  meta: (', '  meta: ( // Métadonnées du modèle').replace('    concours: none,', '    concours: none,\n    // Champs supplémentaires libres') + '\n// Fin du modèle\n';
+  const clean = exerciseFromTemplate(annotated, { title: 'SQL // titre', chapters: [], algorithms: [], structures: [], languages: ['SQL'], levels: ['MPI'], difficulty: 1, minutes: null });
+  for (const comment of ['Aide du modèle', 'imbriqué', 'Métadonnées du modèle', 'Champs supplémentaires libres', 'Fin du modèle']) assert.ok(!clean.includes(comment));
+  assert.ok(clean.includes('"https://example.org/*texte*/"'));
+  assert.ok(clean.includes('`// commentaire de code`'));
+  assert.ok(clean.includes('"SQL // titre"'));
   const sheet = sheetFromTemplate('#import "/templates/exercice.typ": ex\n#show: feuille.with(\n  titre: "TD",\n  exercices: (ex,),\n)\n', 'Feuille', [exercise.fichier, 'exercices/graphes/test.typ']);
   assert.ok(sheet.includes('ex as ex2'));
   assert.ok(sheet.includes('exercices: (ex1, ex2,),'));

@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 0.5.4
+
+- Nouveaux exercices sans commentaires du modèle ; chaînes et extraits de code conservés.
+
 ## 0.5.3
 
 - Création d'exercices : langages lus depuis lib/meta.typ, SQL disponible aussi avec les anciennes banques.

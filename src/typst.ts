@@ -17,7 +17,7 @@ export const tuple = (values: string[]) => `(${values.map(quote).join(', ')}${va
 export const slug = (value: string) => normalize(value).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'exercice';
 
 // Preserve offsets and line breaks while ignoring comments, strings and raw code.
-export function mask(text: string, strings = true): string {
+export function mask(text: string, strings = true, raw = true): string {
   const result = text.split('');
   const blank = (start: number, end: number) => { for (let j = start; j < end; j++) if (text[j] !== '\n') result[j] = ' '; };
   for (let i = 0; i < text.length;) {
@@ -38,7 +38,7 @@ export function mask(text: string, strings = true): string {
     } else if (text[i] === '`') {
       while (text[i] === '`') i++;
       const fence = text.slice(start, i); const end = text.indexOf(fence, i);
-      i = end < 0 ? text.length : end + fence.length; blank(start, i);
+      i = end < 0 ? text.length : end + fence.length; if (raw) blank(start, i);
     } else i++;
   }
   return result.join('');
@@ -94,7 +94,8 @@ export function exerciseFromTemplate(template: string, data: NewExercise): strin
     structures: tuple(data.structures), langages: tuple(data.languages), niveaux: tuple(data.levels),
     difficulte: String(data.difficulty), duree: data.minutes ? `(${Math.floor(data.minutes / 60)}, ${data.minutes % 60})` : 'none', concours: 'none'
   };
-  let result = template;
+  // Keep strings and raw code intact; comments belong to the model, not the new exercise.
+  let result = mask(template, false, false);
   for (const [key, value] of Object.entries(fields)) {
     const pattern = new RegExp(`(^[ \\t]*${key}:)[^\\n]*`, 'm');
     if (!pattern.test(result)) throw new Error(`Modèle incompatible : champ ${key} absent.`);
