@@ -10,7 +10,7 @@ import { exerciseFromTemplate, sheetFromTemplate, contestFromTemplate, creationP
 import { forward } from '../src/tinymist';
 import { Browser } from '../src/browser';
 import { isFolder } from '../src/tree';
-import { Sheets } from '../src/sheets';
+import { Sheets, memberItem } from '../src/sheets';
 import { relocated, moveSource, directories } from '../src/files';
 import { sheetList, sourceMetadata } from '../src/sheet-model';
 import { Drag } from '../src/drag';
@@ -25,10 +25,27 @@ export async function run(): Promise<void> {
   const extension = vscode.extensions.getExtension('qfortier.vscode-exercices-mpi');
   assert.ok(extension, 'Extension chargée');
   const api = await extension.activate();
+  const manifest = extension.packageJSON.contributes;
+  const commands = await vscode.commands.getCommands(true);
+  for (const section of ['current', 'library', 'sheets', 'contests']) {
+    await vscode.commands.executeCommand(`exercicesMpi.${section}.focus`);
+    assert.ok((await vscode.commands.getCommands(true)).includes(`workbench.actions.treeView.exercicesMpi.${section}.collapseAll`));
+    await vscode.commands.executeCommand(`exercicesMpi.collapse${section}`);
+  }
+  for (const binding of manifest.keybindings) assert.ok(commands.includes(binding.command), binding.command);
+  for (const item of manifest.menus['view/title']) {
+    if (/toggle|collapse/.test(item.command)) assert.ok(!item.group.startsWith('navigation'));
+    if (/reset/.test(item.command)) assert.ok(item.when.includes('searchActive'));
+  }
   for (const uri of await vscode.workspace.findFiles('feuilles/**/*.typ')) {
     const doc = await vscode.workspace.openTextDocument(uri);
     sheetList(doc.getText(), path.relative(process.env.EXERCICES_MPI_BANK!, uri.fsPath));
   }
+  const sheetFiles = await vscode.workspace.findFiles('feuilles/**/*.typ');
+  const nestedSheet = sheetFiles.find(uri => path.relative(process.env.EXERCICES_MPI_BANK!, uri.fsPath).split(path.sep).length > 2) ?? sheetFiles[0];
+  assert.ok(nestedSheet, 'Une feuille existante pour tester reveal');
+  const revealed = await api.revealSheet(path.relative(process.env.EXERCICES_MPI_BANK!, nestedSheet.fsPath));
+  assert.equal(revealed.source, path.relative(process.env.EXERCICES_MPI_BANK!, nestedSheet.fsPath), 'Sélection réelle de la feuille avec TreeView.reveal');
   assert.ok(api.getEntries().length > 0, 'Banque détectée');
   const results: Exercise[] = api.search('monoides', { concours: 'ENS' });
   assert.ok(results.some(ex => ex.fichier.endsWith('/automates-monoides.typ')));
@@ -118,7 +135,14 @@ export async function run(): Promise<void> {
     assert.equal(browser.getTreeItem(browser.entries[0]).checkboxState, undefined);
     browser.query = 'absent'; assert.equal(browser.visible.length, 0);
     browser.query = ''; assert.ok(isFolder(browser.getChildren()[0]));
+    assert.equal(browser.searching, false);
+    browser.filters = { concours: 'ENS' }; assert.equal(browser.searching, true); browser.filters = {};
+    const parent = browser.getParent(browser.entries[0]);
+    assert.ok(parent && isFolder(parent));
+    assert.equal(browser.getParent(browser.entries[0]), parent, 'Identité du dossier stable');
+    assert.equal(browser.getParent(parent), undefined);
     browser.toggle(); assert.ok(!isFolder(browser.getChildren()[0]));
+    assert.equal(browser.getParent(browser.entries[0]), undefined);
     browser.dispose();
     const sheetBrowser = new Browser('feuilles', state);
     sheetBrowser.entries = [{ bank: previewBank, source: 'feuilles/td.typ', metadata: [sourceMetadata('titre: "Série spéciale"', 'feuilles/td.typ'), entries[0].ex] }];
@@ -131,6 +155,7 @@ export async function run(): Promise<void> {
     const sheetEditor = new Sheets(() => [previewBank], () => [{ bank: previewBank, ex: sourceMetadata(generated, relative) }]);
     const members = await sheetEditor.members(previewBank, 'feuilles/test-creation.typ');
     assert.equal(members[0].title, 'Test création');
+    assert.equal(memberItem(members[0]).label, '1. Test création');
     await sheetEditor.change(members[0]);
     const sheetDocument = await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(temporary, 'feuilles/test-creation.typ')));
     assert.equal(sheetList(sheetDocument.getText(), 'feuilles/test-creation.typ').entries.length, 0);

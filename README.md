@@ -10,6 +10,21 @@ Installer le VSIX de `releases/`, puis ouvrir une banque `exercices-mpi` approuv
 - Bouton **Nouveau dossier** ; clic droit pour créer un exercice depuis le modèle ou supprimer un fichier dans la corbeille. Un fichier encore référencé ne peut pas être supprimé.
 - Clic droit sur un dossier de **Feuilles** ou **Concours** : créer un fichier depuis son modèle dans ce dossier. Les boutons des sections permettent aussi de créer un fichier sans dossier sélectionné. VS Code ne fournit pas de menu personnalisable sur la zone vide de ces arborescences.
 
+## Raccourcis
+
+Appuyer sur **Ctrl+Alt+X** (Mac : **⌘⌥X**), puis :
+
+| Touche | Action |
+| --- | --- |
+| C | Compiler et afficher le corrigé |
+| E / F / S | Rechercher un exercice / une feuille / un sujet de concours |
+| I | Filtrer les exercices |
+| N | Créer une feuille vide |
+| A | Ajouter un exercice |
+| P | Ouvrir le panneau |
+
+**Échap** dans la liste ou **×** annule la recherche et les filtres, seulement lorsqu'ils sont actifs. **Tout replier** et **Basculer dossiers / liste** sont dans **…**.
+
 ## Aperçu
 
 Énoncé et Corrigé ont deux boutons distincts. **↔** active les sauts source–aperçu et leur surlignage ; **lune** inverse le thème, qui suit VS Code par défaut.

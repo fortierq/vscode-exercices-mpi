@@ -17,7 +17,7 @@ export class CurrentFile implements vscode.TreeDataProvider<Node>, vscode.Dispos
     this.current = vscode.window.activeTextEditor?.document;
     if (sheets) this.subscriptions.push(sheets.changed.event(() => this.update()));
     this.update();
-    context.subscriptions.push(vscode.window.createTreeView('exercicesMpi.current', { treeDataProvider: this, showCollapseAll: true, dragAndDropController }));
+    context.subscriptions.push(vscode.window.createTreeView('exercicesMpi.current', { treeDataProvider: this, showCollapseAll: false, dragAndDropController }));
   }
   private update(): void {
     const revision = ++this.revision;

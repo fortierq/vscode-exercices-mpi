@@ -16,6 +16,7 @@ export class Browser implements vscode.TreeDataProvider<BrowserNode>, vscode.Dis
   query = '';
   filters: Filters = {};
   flat: boolean;
+  private folders = new Map<string, Folder<Leaf>>();
   constructor(readonly category: 'exercices' | 'feuilles' | 'concours', private state: vscode.Memento) {
     this.flat = state.get(`flat.${category}`, false);
   }
@@ -26,6 +27,19 @@ export class Browser implements vscode.TreeDataProvider<BrowserNode>, vscode.Dis
       // A sheet matches when one member satisfies all facets. Its own title is searchable too.
       return metadata.some(ex => matches({ ...ex, titre: `${metadata[0].titre} ${ex.titre}`, fichier: `${item.source} ${ex.fichier}` }, this.query, this.filters));
     });
+  }
+  get searching(): boolean { return !!this.query.trim() || Object.values(this.filters).some(Boolean); }
+  getParent(node: BrowserNode): BrowserNode | undefined {
+    const id = this.getTreeItem(node).id;
+    const find = (nodes: BrowserNode[], parent?: BrowserNode): BrowserNode | undefined => {
+      for (const child of nodes) {
+        if (this.getTreeItem(child).id === id) return parent;
+        const found = find(this.getChildren(child), child);
+        if (found) return found;
+      }
+      return undefined;
+    };
+    return find(this.getChildren());
   }
   getChildren(node?: BrowserNode): BrowserNode[] {
     if (node) return isFolder(node) ? node.children : 'members' in node ? node.members ?? [] : [];
@@ -51,7 +65,18 @@ export class Browser implements vscode.TreeDataProvider<BrowserNode>, vscode.Dis
         if (banks.size > 1) files.push(Object.assign({ folder: bank.root, title: bank.name, children: tree }, { bank, source: this.category })); else files.push(...tree);
       }
     }
-    return files;
+    // Keep folder identities stable when reveal walks back up the hierarchy.
+    const folders = new Map<string, Folder<Leaf>>();
+    const stable = (nodes: BrowserNode[]): BrowserNode[] => nodes.map(node => {
+      if (!isFolder(node)) return node;
+      node.children = stable(node.children);
+      const folder = Object.assign(this.folders.get(node.folder) ?? node, node);
+      folders.set(node.folder, folder);
+      return folder;
+    });
+    const roots = stable(files);
+    this.folders = folders;
+    return roots;
   }
   getTreeItem(node: BrowserNode): vscode.TreeItem {
     if (isFolder(node)) {

@@ -1,5 +1,11 @@
 # Journal des versions
 
+## 0.5.2
+
+- Création dans un dossier corrigée : sélection de la feuille avec ses parents, même après une recherche.
+- Annulation contextuelle des recherches par × ou Échap, commandes secondaires dans …, boutons de création regroupés.
+- Exercices des feuilles numérotés, palette simplifiée et raccourcis avec un préfixe commun.
+
 ## 0.5.1
 
 - Création de feuilles et de sujets de concours dans le dossier choisi par clic droit ; bouton de création dans Concours.

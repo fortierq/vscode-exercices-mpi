@@ -67,7 +67,7 @@ export class Sheets implements vscode.Disposable {
 }
 
 export function memberItem(member: SheetMember): vscode.TreeItem {
-  const item = new vscode.TreeItem(member.title);
+  const item = new vscode.TreeItem(`${member.index + 1}. ${member.title}`);
   item.id = `${member.bank.root}/${member.sheet}:${member.index}`;
   item.contextValue = 'sheetMember';
   item.tooltip = member.source;
