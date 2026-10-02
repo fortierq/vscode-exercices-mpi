@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { Variant, pdfTarget } from './core';
+import { Variant, pdfTarget, pdfFilename } from './core';
 import { Bank, Runner } from './runner';
 import * as tinymist from './tinymist';
 
@@ -50,9 +50,10 @@ export class Previews implements vscode.Disposable {
     const key = `${bank.root}/${source}`;
     const existing = this.entries.get(key);
     if (existing) { existing.panel.reveal(undefined, true); await existing.select(variant); return existing; }
-    const panel = vscode.window.createWebviewPanel('exercicesMpi.pdf', path.basename(source), { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, {
+    const panel = vscode.window.createWebviewPanel('exercicesMpi.pdf', pdfFilename(source, variant), { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, {
       enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media'), vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'pdfjs')]
     });
+    panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, 'media', 'pdf.svg');
     const sessions = new Map<Variant, tinymist.Session>();
     const pdfs = new Map<Variant, string>();
     const channel = randomBytes(18).toString('hex');
@@ -66,7 +67,7 @@ export class Previews implements vscode.Disposable {
       return preview.dark ?? (theme === 'dark' || (theme === 'auto' && [vscode.ColorThemeKind.Dark, vscode.ColorThemeKind.HighContrast].includes(vscode.window.activeColorTheme.kind)));
     };
     const describe = async () => {
-      panel.title = `${path.basename(source, '.typ')} — ${preview.variant === 'corrige' ? 'corrigé' : 'énoncé'}`;
+      panel.title = pdfFilename(source, preview.variant);
       if (ready && !disposed) await post({ type: 'show', variant: preview.variant, native: preview.native, jumps: preview.jumps, dark: isDark(), pdf: pdfs.get(preview.variant), sessions: Object.fromEntries([...sessions].map(([v, s]) => [v, s.url])), tokens: Object.fromEntries([...sessions].map(([v, s]) => [v, s.id])) });
     };
     const select = async (value: Variant) => {

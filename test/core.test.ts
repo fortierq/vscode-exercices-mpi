@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Exercise, executionCommand, matches, parseCatalogue, parseDiagnostics, pdfTarget, previewArguments } from '../src/core';
+import { Exercise, executionCommand, matches, parseCatalogue, parseDiagnostics, pdfTarget, pdfFilename, previewArguments } from '../src/core';
 import { exerciseFromTemplate, sheetFromTemplate, outline, vocabulary, mask } from '../src/typst';
 import { hierarchy, isFolder } from '../src/tree';
 import { sheetList, editSheet, sourceMetadata } from '../src/sheet-model';
@@ -113,6 +113,11 @@ test('diagnostics Typst : erreurs, avertissements, coordonnées à base zéro', 
     { file: 'exercices/test.typ', line: 7, column: 3, message: 'unknown variable: foo', warning: false },
     { file: 'lib/exercices.typ', line: 1, column: 0, message: 'font missing', warning: true }
   ]);
+});
+test('noms PDF : énoncé et corrigé partagent le nom de source', () => {
+  assert.equal(pdfFilename('feuilles/langages/td-kleene.typ', 'enonce'), 'td-kleene.pdf');
+  assert.equal(pdfFilename('feuilles/langages/td-kleene.typ', 'corrige'), 'td-kleene-cor.pdf');
+  assert.equal(pdfFilename(exercise.fichier, 'corrige'), exercise.fichier.split('/').at(-1)!.replace('.typ', '-cor.pdf'));
 });
 test('aperçu : modèles et variantes cohérents avec les cibles make c, sans PDF intermédiaire', () => {
   const exerciseArgs = previewArguments('/bank', exercise.fichier, 'corrige');

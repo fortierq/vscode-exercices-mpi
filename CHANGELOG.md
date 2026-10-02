@@ -1,5 +1,10 @@
 # Journal des versions
 
+## 0.5.5
+
+- Icône PDF et noms cohérents pour l'aperçu et l'export : nom.pdf / nom-cor.pdf.
+- Barre d'outils suivant les couleurs, onglets et dimensions du panneau Terminal.
+
 ## 0.5.4
 
 - Nouveaux exercices sans commentaires du modèle ; chaînes et extraits de code conservés.

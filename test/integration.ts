@@ -68,6 +68,8 @@ export async function run(): Promise<void> {
     const editor = await vscode.window.showTextDocument(vscode.Uri.file(file), { viewColumn: vscode.ViewColumn.One });
     const before = Date.now();
     const preview = await previews.open(previewBank, relative, 'enonce');
+    assert.equal(preview.panel.title, 'test-creation.pdf');
+    assert.equal((preview.panel.iconPath as vscode.Uri).path, vscode.Uri.joinPath(extension.extensionUri, 'media', 'pdf.svg').path);
     console.log('Démarrage aperçu (ms)', Date.now() - before);
     let frames = 0;
     const listener = preview.panel.webview.onDidReceiveMessage(message => { if (message.type === 'frameReady') frames++; });
@@ -113,6 +115,7 @@ export async function run(): Promise<void> {
     assert.ok(!messages.slice(noJump).some(data => data.toString().startsWith('jump,')), 'Saut direct désactivé');
     await preview.toggleJumps();
     await preview.select('corrige');
+    assert.equal(preview.panel.title, 'test-creation-cor.pdf');
     let correctedOutline: any;
     preview.sessions.get('corrige')!.connection.onNotification('tinymist/documentOutline', outline => { correctedOutline = outline; });
     const secondEdit = new vscode.WorkspaceEdit();

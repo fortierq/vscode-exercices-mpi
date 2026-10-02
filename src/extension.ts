@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { existsSync } from 'node:fs';
 import { readFile, realpath } from 'node:fs/promises';
-import { Filters, facets, labels, matches, parseCatalogue, pdfTarget, safeSource } from './core';
+import { Filters, facets, labels, matches, parseCatalogue, pdfTarget, pdfFilename, safeSource } from './core';
 import { Bank, Runner } from './runner';
 import { Previews } from './preview';
 import { CurrentFile, reveal } from './outline';
@@ -156,7 +156,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await runner.run(source.bank, targets);
   }
   const previews = new Previews(context, async (preview, variant) => {
-    const destination = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(preview.bank.root, `${path.basename(preview.source, '.typ')}-${variant}.pdf`)), filters: { PDF: ['pdf'] } });
+    const destination = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(preview.bank.root, pdfFilename(preview.source, variant))), filters: { PDF: ['pdf'] } });
     if (!destination) return;
     const target = pdfTarget(preview.source, variant);
     await compile(preview, [target]);

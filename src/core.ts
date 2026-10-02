@@ -20,6 +20,11 @@ export function safeSource(file: string): string {
   return file;
 }
 
+export function pdfFilename(source: string, variant: Variant): string {
+  safeSource(source);
+  return `${path.basename(source, '.typ')}${variant === 'corrige' ? '-cor' : ''}.pdf`;
+}
+
 export function pdfTarget(source: string, variant: Variant): string {
   safeSource(source);
   const stem = source.slice(0, -4);
